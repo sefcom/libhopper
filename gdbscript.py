@@ -34,7 +34,7 @@ class Argument():
         fakeStructPtr = int(msg.strip().split(" ")[-1], 16)
 
         try:
-            gdb.execute(f"set {self.name} = {fakeStructPtr}")
+            gdb.execute(f"set variable {self.name} = {fakeStructPtr}")
         except:
             return
         inferior = gdb.inferiors()[0]
@@ -60,7 +60,7 @@ class UserCall():
             argVal = temp[temp.index("=") + 1]
             self.args.append(Argument(argName, argVal))
     
-    def doCorruption(self):
+    def doCorruption(self, step):
         # Search valid arg
         for arg in self.args:
             if arg.name not in self.targetStructs:
@@ -69,13 +69,15 @@ class UserCall():
                 continue
 
             # Start corrupt data
-            for i in range(0, arg.size, arg.size):
+            if step == -1:
+                step = arg.size
+            for i in range(0, arg.size, step):
                 # Attempt to corrupt data
                 gdb.execute("checkpoint")
                 gdb.execute("restart 1")
 
                 gdb.execute("info args")
-                arg.setVal("A" * arg.size, i)
+                arg.setVal("A" * step, i)
                 gdb.execute("info args")
 
                 finishCurrentFunc()
@@ -98,7 +100,9 @@ def stopHandler(event):
 def gdbSetup(brkp, argv):
     gdb.execute(f"start {argv}")
     # TODO: do better on breaking user calls
-    gdb.rbreak(f"{brkp}")
+    for regx in brkp:
+        gdb.rbreak(f"{regx}")
+    gdb.execute("info breakpoints")
     gdb.events.stop.connect(stopHandler)
     gdb.execute("continue")
 
@@ -114,22 +118,46 @@ def crashHandler(func, arg, off):
 
 # Main logic 
 def main():
+    # TODO: Config this before start!
+    targetStructs = []
+    brkp = []
+    argv = ""
+
     # Parameters for libpng
     # targetStructs = ["png_ptr", "info_ptr"]
-    # brkp = "^png_"
+    # brkp = ["^png_"]
     # argv = ""
 
     # Parameters for libjpeg
-    targetStructs = ["cinfo"]
-    brkp = "^jpeg_"
-    argv = "-dct int -ppm -outfile testout.ppm  ./testorig.jpg"
+    # targetStructs = ["cinfo"]
+    # brkp = ["^jpeg_"]
+    # djpeg testing arguments
+    # argv = "-dct int -ppm -outfile testout.ppm  ./testorig.jpg"
+    # argv = "-dct int -bmp -colors 256 -outfile testout.bmp  ./testorig.jpg"
+    # argv = "-dct int -ppm -outfile testoutp.ppm ./testprog.jpg"
+    # cjpeg testing arguments
+    # argv = "-dct int -outfile testout.jpg  ./testimg.ppm"
+    # argv = "-dct int -progressive -opt -outfile testoutp.jpg ./testimg.ppm"
+    # jpegtran testing arguments
+    # argv = "-outfile testoutt.jpg ./testprog.jpg"
+
+    # Parameters for libxml TODO
+    # targetStructs = []
+
+    # Parameters for zlib
+    # targetStructs = ["strm", "file"]
+    # brkp = ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
+
+    # Parameters for libmpeg2 TODO
+    # targetStructs = ["mpeg2dec", "decoder", "sequence"]
+    # brkp = ["^mpeg2_"]
 
     gdbSetup(brkp, argv)
 
     while(True):
         funcName = gdb.selected_frame().function()
         userCall = UserCall(funcName, targetStructs)
-        userCall.doCorruption()
+        userCall.doCorruption(-1)
         gdb.execute(f"clear {funcName}")
 
         # Continue to next breakpoint
