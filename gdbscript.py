@@ -85,6 +85,7 @@ class UserCall():
 
                     # Continue to next breakpoint
                     finishCurrentFunc()
+                    gdb.execute("continue")
                     continue
         
                 # Restore normal execution routine
@@ -107,7 +108,6 @@ def finishCurrentFunc():
     gdb.execute("disable")
     gdb.execute("finish")
     gdb.execute("enable")
-    gdb.execute("continue")
 
 def crashHandler(func, arg, off):
     with open("Crash_Funcs.txt", "a") as f:
@@ -127,6 +127,7 @@ def main():
 
         # Continue to next breakpoint
         finishCurrentFunc()
+        gdb.execute("continue")
 
 
 # Main logic starts here
