@@ -28,17 +28,13 @@ class Argument():
         self.size = int(msg.strip().split(" ")[-1])
     
     def setVal(self, val, off):
-        # Alloc fake struct
-        msg = gdb.execute(f"call malloc({self.size})", to_string=True)
-        assert(msg != None)
-        fakeStructPtr = int(msg.strip().split(" ")[-1], 16)
-
-        try:
-            gdb.execute(f"set variable {self.name} = {fakeStructPtr}")
-        except:
-            return
+        # Directly modify / corrupt the struct
         inferior = gdb.inferiors()[0]
-        inferior.write_memory(fakeStructPtr + off, val)
+        try:
+            inferior.write_memory(int(self.val, 16) + off, val)
+        except gdb.error:
+            # Unaccessible
+            return
 
 class UserCall():
     def __init__(self, name, targetStructs):
@@ -76,9 +72,10 @@ class UserCall():
                 gdb.execute("checkpoint")
                 gdb.execute("restart 1")
 
-                gdb.execute("info args")
+                # Some times the arg's address is unaccessible
+                # gdb.execute(f"print *{arg.name}")
                 arg.setVal("A" * step, i)
-                gdb.execute("info args")
+                # gdb.execute(f"print *{arg.name}")
 
                 finishCurrentFunc()
 
