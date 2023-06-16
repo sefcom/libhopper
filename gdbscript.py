@@ -138,8 +138,9 @@ def main():
     # jpegtran testing arguments
     # argv = "-outfile testoutt.jpg ./testprog.jpg"
 
-    # Parameters for libxml TODO
-    # targetStructs = []
+    # Parameters for libxml
+    # targetStructs = ["node", "parent", "lst", "target", "elem"]
+    # brkp = ["^xml", "^html"]
 
     # Parameters for zlib
     # targetStructs = ["strm", "file"]
@@ -148,6 +149,10 @@ def main():
     # Parameters for libmpeg2 TODO
     # targetStructs = ["mpeg2dec", "decoder", "sequence"]
     # brkp = ["^mpeg2_"]
+
+    # Parameters for libzip TODO
+    # targetStructs = []
+    # brkp = ["^zip_"]
 
     gdbSetup(brkp, argv)
 
