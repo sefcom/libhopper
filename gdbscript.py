@@ -116,8 +116,9 @@ def crashHandler(func, arg, off):
 # Main logic 
 def main():
     # TODO: Config this before start!
-    targetStructs = []
-    brkp = []
+    # Parameters for unit test
+    targetStructs = ["state"]
+    brkp = ["^libapi_"]
     argv = ""
 
     # Parameters for libpng
@@ -146,13 +147,10 @@ def main():
     # targetStructs = ["strm", "file"]
     # brkp = ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
 
-    # Parameters for libmpeg2 TODO
-    # targetStructs = ["mpeg2dec", "decoder", "sequence"]
-    # brkp = ["^mpeg2_"]
-
-    # Parameters for libzip TODO
-    # targetStructs = []
-    # brkp = ["^zip_"]
+    # Parameters for libssl
+    # targetStructs = ["s", "ssl", "ss", "libctx", "ctx"]
+    # argv = "certs/ recipes/90-test_sslapi_data/passwd.txt temp_api_test default default.cnf recipes/90-test_sslapi_data/dhparams.pem"
+    # brkp = ["^SSL_", "^ssl_"]
 
     gdbSetup(brkp, argv)
 
