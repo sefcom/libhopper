@@ -1,0 +1,15 @@
+========== Whole Struct Corruption ==========
+libapi_name - state - 0
+========== 1 Byte Corruption ==========
+libapi_name - state - 10
+libapi_name - state - 11
+libapi_name - state - 12
+libapi_name - state - 13
+libapi_name - state - 14
+libapi_name - state - 15
+libapi_read - state - 17
+libapi_read - state - 18
+libapi_read - state - 19
+libapi_write - state - 17
+libapi_write - state - 18
+libapi_write - state - 19
