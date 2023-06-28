@@ -152,23 +152,30 @@ class UserCall():
                 gdb.execute("restart 0")
                 gdb.execute("delete checkpoint 1")
     
+
+funcs = []
+
 def stopHandler(event):
     if hasattr (event, 'stop_signal'):
         gdb.execute("continue")
 
 def gdbSetup(brkp, argv):
+    global funcs
+    
     gdb.execute(f"start {argv}")
     # TODO: do better on breaking user calls
     for regx in brkp:
         gdb.rbreak(f"{regx}")
     
-    # Clear finished funcs
+    # Record finished funcs
     with open("Finish_Funcs.txt", "r") as f:
         funcs = f.read().strip().split("\n")
-    for func in funcs:
-        gdb.execute(f"clear {func}")
     
-    gdb.execute("info breakpoints")
+    with open("Todo_Funcs.txt", "w") as f:
+        msg = gdb.execute("info breakpoints", to_string=True)
+        assert(msg != None)
+        f.write(msg)
+
     gdb.events.stop.connect(stopHandler)
     gdb.execute("continue")
 
@@ -183,7 +190,6 @@ def crashFuncHandler(funcName, arg, off_start, off_end):
         f.write(f"{funcName} - {arg} - {off_start} - {off_end}\n")
     
 def finishFuncHandler(funcName):
-    gdb.execute(f"clear {funcName}")
     with open("Finish_Funcs.txt", "a") as f:
         f.write(f"{funcName}\n")
 
@@ -230,11 +236,13 @@ def main():
 
     while(True):
         funcName = gdb.selected_frame().function()
-        userCall = UserCall(funcName, targetStructs)
-        userCall.doCorruption(-1)
-        finishFuncHandler(funcName)
+        if funcName.name not in funcs:
+            userCall = UserCall(funcName, targetStructs)
+            userCall.doCorruption(-1)
+            finishFuncHandler(funcName)
 
         # Continue to next breakpoint
+        gdb.execute(f"clear {funcName}")
         finishCurrentFunc()
         gdb.execute("continue")
 
