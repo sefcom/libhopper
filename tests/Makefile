@@ -3,7 +3,7 @@ CC              =       gcc
 CFLAGS          +=      -Wall -g -c
 
 
-.PHONY : all clean runtest compare
+.PHONY : all clean compare
 
 all: test
 
@@ -21,12 +21,8 @@ libfakelib.a: fakelib.o
 
 clean:
 	@rm -rf test *.o *.a *.gch
-
-runtest:
-	@echo "Follow the command below:"
-	@echo "$$ cp ../gdbscript.py ./"
-	@echo "$$ gdb ./test"
-	@echo "(gdb) source ./gdbscript.py"
+	@rm -rf Crash_Funcs.txt Finish_Funcs.txt Todo_Funcs.txt
+	@rm -rf gdbscript.py
 
 compare: all
-	@cmp Crash_Funcs.txt expected.txt
+	@diff Crash_Funcs.txt expected.txt
