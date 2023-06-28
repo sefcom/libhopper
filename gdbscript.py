@@ -56,6 +56,68 @@ class UserCall():
             argVal = temp[temp.index("=") + 1]
             self.args.append(Argument(argName, argVal))
     
+    def doFullCorrupt(self, arg):
+        # Attempt to corrupt data
+        gdb.execute("checkpoint")
+        gdb.execute("restart 1")
+
+        arg.setVal("A" * arg.size, 0)
+
+        finishCurrentFunc()
+
+        # Examine if crash happens
+        msg = gdb.execute("info checkpoints", to_string=True)
+        assert(msg != None)
+        if "No checkpoints" in msg.strip():
+            crashFuncHandler(self.name, arg.name, 0, arg.size)
+            return
+        
+        # Restore normal execution routine
+        gdb.execute("restart 0")
+        gdb.execute("delete checkpoint 1")
+    
+    def doOverflow(self, arg, bound):
+        for i in range(0, bound, 1):
+            # Attempt to corrupt data
+            gdb.execute("checkpoint")
+            gdb.execute("restart 1")
+
+            arg.setVal("A" * i, 0)
+
+            finishCurrentFunc()
+
+            # Examine if crash happens
+            msg = gdb.execute("info checkpoints", to_string=True)
+            assert(msg != None)
+            if "No checkpoints" in msg.strip():
+                crashFuncHandler(self.name, arg.name, 0, i)
+                continue
+        
+            # Restore normal execution routine
+            gdb.execute("restart 0")
+            gdb.execute("delete checkpoint 1")
+
+    def doArbiWrite(self, arg, len):
+        for i in range(0, arg.size, 1):
+            # Attempt to corrupt data
+            gdb.execute("checkpoint")
+            gdb.execute("restart 1")
+
+            arg.setVal("A" * len, i)
+
+            finishCurrentFunc()
+
+            # Examine if crash happens
+            msg = gdb.execute("info checkpoints", to_string=True)
+            assert(msg != None)
+            if "No checkpoints" in msg.strip():
+                crashFuncHandler(self.name, arg.name, i, i + len)
+                continue
+        
+            # Restore normal execution routine
+            gdb.execute("restart 0")
+            gdb.execute("delete checkpoint 1")
+
     def doCorruption(self, step):
         # Search valid arg
         for arg in self.args:
@@ -83,7 +145,7 @@ class UserCall():
                 msg = gdb.execute("info checkpoints", to_string=True)
                 assert(msg != None)
                 if "No checkpoints" in msg.strip():
-                    crashFuncHandler(self.name, arg.name, i)
+                    crashFuncHandler(self.name, arg.name, i, i + 1)
                     continue
         
                 # Restore normal execution routine
@@ -116,9 +178,9 @@ def finishCurrentFunc():
     gdb.execute("finish")
     gdb.execute("enable")
 
-def crashFuncHandler(funcName, arg, off):
+def crashFuncHandler(funcName, arg, off_start, off_end):
     with open("Crash_Funcs.txt", "a") as f:
-        f.write(f"{funcName} - {arg} - {off}\n")
+        f.write(f"{funcName} - {arg} - {off_start} - {off_end}\n")
     
 def finishFuncHandler(funcName):
     gdb.execute(f"clear {funcName}")
