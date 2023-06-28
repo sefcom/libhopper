@@ -24,8 +24,8 @@ clean:
 
 runtest:
 	@echo "Follow the command below:"
-	@echo "cp ../gdbscript.py ./"
-	@echo "gdb ./test"
+	@echo "$$ cp ../gdbscript.py ./"
+	@echo "$$ gdb ./test"
 	@echo "(gdb) source ./gdbscript.py"
 
 compare: all

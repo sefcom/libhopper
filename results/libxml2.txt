@@ -14,7 +14,7 @@ xmlDOMWrapReconcileNamespaces - elem - 0
 xmlDocCopyNodeList - node - 0
 xmlNodeBufGetContent - cur - 0
 xmlNodeGetBase - cur - 0
-=== 1 Byte
+========== 1 Byte Corruption ==========
 xmlFreeDoc - cur - 16
 xmlFreeDoc - cur - 17
 xmlFreeDoc - cur - 18
