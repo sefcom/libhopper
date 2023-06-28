@@ -162,13 +162,16 @@ def stopHandler(event):
 def gdbSetup(brkp, argv):
     global funcs
     
+    gdb.execute("set confirm off")
+    gdb.execute("set pagination off")
     gdb.execute(f"start {argv}")
+
     # TODO: do better on breaking user calls
     for regx in brkp:
         gdb.rbreak(f"{regx}")
     
     # Record finished funcs
-    with open("Finish_Funcs.txt", "r") as f:
+    with open("Finish_Funcs.txt", "w+") as f:
         funcs = f.read().strip().split("\n")
     
     with open("Todo_Funcs.txt", "w") as f:
