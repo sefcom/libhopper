@@ -159,26 +159,24 @@ def stopHandler(event):
     if hasattr (event, 'stop_signal'):
         gdb.execute("continue")
 
-def gdbSetup(brkp, argv):
+def gdbSetup(brkpRegx, argv):
     global funcs
     
     gdb.execute("set confirm off")
     gdb.execute("set pagination off")
     gdb.execute(f"start {argv}")
 
-    # TODO: do better on breaking user calls
-    for regx in brkp:
-        gdb.rbreak(f"{regx}")
+    with open("Todo_Funcs.txt", "w") as f:
+        for regx in brkpRegx:
+            for brkp in gdb.rbreak(f"{regx}"):
+                location = brkp.location
+                assert location != None
+                f.write(f"{location.split(':')[-1]}\n")
     
     # Record finished funcs
     with open("Finish_Funcs.txt", "w+") as f:
         funcs = f.read().strip().split("\n")
     
-    with open("Todo_Funcs.txt", "w") as f:
-        msg = gdb.execute("info breakpoints", to_string=True)
-        assert(msg != None)
-        f.write(msg)
-
     gdb.events.stop.connect(stopHandler)
     gdb.execute("continue")
 
@@ -201,17 +199,17 @@ def main():
     # TODO: Config this before start!
     # Parameters for unit test
     targetStructs = ["state"]
-    brkp = ["^libapi_"]
+    brkpRegx = ["^libapi_"]
     argv = ""
 
     # Parameters for libpng
     # targetStructs = ["png_ptr", "info_ptr"]
-    # brkp = ["^png_"]
+    # brkpRegx = ["^png_"]
     # argv = ""
 
     # Parameters for libjpeg
     # targetStructs = ["cinfo"]
-    # brkp = ["^jpeg_"]
+    # brkpRegx = ["^jpeg_"]
     # djpeg testing arguments
     # argv = "-dct int -ppm -outfile testout.ppm  ./testorig.jpg"
     # argv = "-dct int -bmp -colors 256 -outfile testout.bmp  ./testorig.jpg"
@@ -224,30 +222,33 @@ def main():
 
     # Parameters for libxml
     # targetStructs = ["node", "parent", "lst", "target", "elem"]
-    # brkp = ["^xml", "^html"]
+    # brkpRegx = ["^xml", "^html"]
 
     # Parameters for zlib
     # targetStructs = ["strm", "file"]
-    # brkp = ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
+    # brkpRegx = ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
 
     # Parameters for libssl
     # targetStructs = ["s", "ssl", "ss", "libctx", "ctx"]
     # argv = "certs/ recipes/90-test_sslapi_data/passwd.txt temp_api_test default default.cnf recipes/90-test_sslapi_data/dhparams.pem"
-    # brkp = ["^SSL_", "^ssl_"]
+    # brkpRegx = ["^SSL_", "^ssl_"]
 
-    gdbSetup(brkp, argv)
+    gdbSetup(brkpRegx, argv)
 
     while(True):
-        funcName = gdb.selected_frame().function()
-        if funcName.name not in funcs:
-            userCall = UserCall(funcName, targetStructs)
-            userCall.doCorruption(-1)
-            finishFuncHandler(funcName)
+        try:
+            funcName = gdb.selected_frame().function()
+            if funcName.name not in funcs:
+                userCall = UserCall(funcName, targetStructs)
+                userCall.doCorruption(-1)
+                finishFuncHandler(funcName)
 
-        # Continue to next breakpoint
-        gdb.execute(f"clear {funcName}")
-        finishCurrentFunc()
-        gdb.execute("continue")
+            # Continue to next breakpoint
+            gdb.execute(f"clear {funcName}")
+            finishCurrentFunc()
+            gdb.execute("continue")
+        except gdb.error:
+            gdb.execute("quit")
 
 
 # Main logic starts here
