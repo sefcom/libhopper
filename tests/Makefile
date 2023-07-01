@@ -3,7 +3,7 @@ CC              =       gcc
 CFLAGS          +=      -Wall -g -c
 
 
-.PHONY : all clean compare
+.PHONY : all clean runtest
 
 all: test
 
@@ -24,5 +24,6 @@ clean:
 	@rm -rf Crash_Funcs.txt Finish_Funcs.txt Todo_Funcs.txt
 	@rm -rf gdbscript.py
 
-compare: all
+runtest: all
+	@gdb ./test -ex 'source ../gdbscript.py' > /dev/null 2>&1
 	@diff Crash_Funcs.txt expected.txt
