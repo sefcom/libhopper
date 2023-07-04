@@ -1,5 +1,29 @@
 import gdb
+import struct
 
+def p8(x):
+    return struct.pack("<B", x)
+
+def p16(x):
+    return struct.pack("<H", x)
+
+def p32(x):
+    return struct.pack("<I", x)
+
+def p64(x):
+    return struct.pack("<Q", x)
+
+def u8(x):
+    return struct.unpack("<B", x)[0]
+
+def u16(x):
+    return struct.unpack("<H", x)[0]
+
+def u32(x):
+    return struct.unpack("<I", x)[0]
+
+def u64(x):
+    return struct.unpack("<Q", x)[0]
 
 class Argument():
     def __init__(self, name, val):
@@ -26,7 +50,22 @@ class Argument():
 
         assert(msg != None)
         self.size = int(msg.strip().split(" ")[-1])
+
+    def bitFlip(self, data):
+        bitflip = b""
+        for byte in data:
+            bitflip += p8(~byte & 0xff)
+        return bitflip
     
+    def getVal(self, len, off):
+        # Directly modify / corrupt the struct
+        inferior = gdb.inferiors()[0]
+        try:
+            return inferior.read_memory(int(self.val, 16) + off, len).tobytes()
+        except gdb.error:
+            # Unaccessible
+            return
+
     def setVal(self, val, off):
         # Directly modify / corrupt the struct
         inferior = gdb.inferiors()[0]
