@@ -108,7 +108,7 @@ class UserCall():
         msg = gdb.execute("info checkpoints", to_string=True)
         assert(msg != None)
         if "No checkpoints" in msg.strip():
-            crashFuncHandler(self.name, arg.name, 0, arg.size)
+            crashFuncHandler(self.name, arg.name, "Full Corrupt", 0, arg.size)
             return
         
         # Restore normal execution routine
@@ -129,7 +129,7 @@ class UserCall():
             msg = gdb.execute("info checkpoints", to_string=True)
             assert(msg != None)
             if "No checkpoints" in msg.strip():
-                crashFuncHandler(self.name, arg.name, 0, i)
+                crashFuncHandler(self.name, arg.name, "Overflow", 0, i)
                 continue
         
             # Restore normal execution routine
@@ -150,7 +150,7 @@ class UserCall():
             msg = gdb.execute("info checkpoints", to_string=True)
             assert(msg != None)
             if "No checkpoints" in msg.strip():
-                crashFuncHandler(self.name, arg.name, i, i + len)
+                crashFuncHandler(self.name, arg.name, "Arbitrary Write", i, i + len)
                 continue
         
             # Restore normal execution routine
@@ -184,7 +184,7 @@ class UserCall():
                 msg = gdb.execute("info checkpoints", to_string=True)
                 assert(msg != None)
                 if "No checkpoints" in msg.strip():
-                    crashFuncHandler(self.name, arg.name, i, i + 1)
+                    crashFuncHandler(self.name, arg.name, "Default", i, i + 1)
                     continue
         
                 # Restore normal execution routine
@@ -226,9 +226,9 @@ def finishCurrentFunc():
     gdb.execute("finish")
     gdb.execute("enable")
 
-def crashFuncHandler(funcName, arg, off_start, off_end):
+def crashFuncHandler(funcName, argName, corruptType, off_start, off_end):
     with open("Crash_Funcs.txt", "a") as f:
-        f.write(f"{funcName} - {arg} - {off_start} - {off_end}\n")
+        f.write(f"{funcName} - {argName} - {corruptType} - {off_start} - {off_end}\n")
     
 def finishFuncHandler(funcName):
     with open("Finish_Funcs.txt", "a") as f:
