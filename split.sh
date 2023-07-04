@@ -4,7 +4,7 @@
 input_file="Todo_Funcs.txt"
 
 # Number of desired output files
-num_files=8
+num_files=4
 
 # Calculate the total line count of the input file
 total_lines=$(wc -l < "$input_file")

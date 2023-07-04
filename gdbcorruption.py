@@ -1,5 +1,4 @@
 import gdb
-import configparser
 
 
 class Argument():
@@ -152,13 +151,16 @@ class UserCall():
                 # Restore normal execution routine
                 gdb.execute("restart 0")
                 gdb.execute("delete checkpoint 1")
+    
+
+funcs = []
 
 def stopHandler(event):
     if hasattr (event, 'stop_signal'):
         gdb.execute("continue")
 
 def gdbSetup(brkpRegx, argv):
-    global workingFuncs
+    global funcs
     
     gdb.execute("set confirm off")
     gdb.execute("set pagination off")
@@ -166,16 +168,15 @@ def gdbSetup(brkpRegx, argv):
 
     for regx in brkpRegx:
         gdb.rbreak(f"{regx}")
-    
-    # Record todo funcs
+
     with open("Todo_Funcs.txt", "r") as f:
-        todoFuncs = f.read().strip().split("\n")
+        todo = f.read().strip().split("\n")
     
     # Record finished funcs
     with open("Finish_Funcs.txt", "r") as f:
-        finishFuncs = f.read().strip().split("\n")
+        finish = f.read().strip().split("\n")
     
-    workingFuncs = list(set(todoFuncs) - set(finishFuncs))
+    funcs = list(set(todo) - set(finish))
     
     gdb.events.stop.connect(stopHandler)
     gdb.execute("continue")
@@ -194,44 +195,51 @@ def finishFuncHandler(funcName):
     with open("Finish_Funcs.txt", "a") as f:
         f.write(f"{funcName}\n")
 
-def readConfig():
-    global targetStructs
-    global brkpRegx
-    global argv
-
-    # Create a ConfigParser object
-    config = configparser.ConfigParser()
-
-    # Read the configuration file
-    config.read('config.ini')
-
-    target = "work"
-
-    # Access the variables
-    targetStructs = config.get(target, 'targetStructs').split(",")
-    brkpRegx = config.get(target, 'brkpRegx').split(",")
-    argv = config.get(target, 'argv')
-
-# Globals
-targetStructs = []
-brkpRegx = []
-argv = ""
-workingFuncs = []
-
 # Main logic 
 def main():
-    global targetStructs
-    global brkpRegx
-    global argv
-    global workingFuncs
+    # TODO: Config this before start!
+    # Parameters for unit test
+    targetStructs = ["state"]
+    brkpRegx = ["^libapi_"]
+    argv = ""
 
-    readConfig()
+    # Parameters for libpng
+    # targetStructs = ["png_ptr", "info_ptr"]
+    # brkpRegx = ["^png_"]
+    # argv = ""
+
+    # Parameters for libjpeg
+    # targetStructs = ["cinfo"]
+    # brkpRegx = ["^jpeg_"]
+    # djpeg testing arguments
+    # argv = "-dct int -ppm -outfile testout.ppm  ./testorig.jpg"
+    # argv = "-dct int -bmp -colors 256 -outfile testout.bmp  ./testorig.jpg"
+    # argv = "-dct int -ppm -outfile testoutp.ppm ./testprog.jpg"
+    # cjpeg testing arguments
+    # argv = "-dct int -outfile testout.jpg  ./testimg.ppm"
+    # argv = "-dct int -progressive -opt -outfile testoutp.jpg ./testimg.ppm"
+    # jpegtran testing arguments
+    # argv = "-outfile testoutt.jpg ./testprog.jpg"
+
+    # Parameters for libxml
+    # targetStructs = ["node", "parent", "lst", "target", "elem"]
+    # brkpRegx = ["^xml", "^html"]
+
+    # Parameters for zlib
+    # targetStructs = ["strm", "file"]
+    # brkpRegx = ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
+
+    # Parameters for libssl
+    # targetStructs = ["s", "ssl", "ss", "libctx", "ctx"]
+    # argv = "certs/ recipes/90-test_sslapi_data/passwd.txt temp_api_test default default.cnf recipes/90-test_sslapi_data/dhparams.pem"
+    # brkpRegx = ["^SSL_", "^ssl_"]
+
     gdbSetup(brkpRegx, argv)
 
     while(True):
         try:
             funcName = gdb.selected_frame().function()
-            if funcName.name not in workingFuncs:
+            if funcName.name in funcs:
                 userCall = UserCall(funcName, targetStructs)
                 userCall.doCorruption(-1)
                 finishFuncHandler(funcName)
