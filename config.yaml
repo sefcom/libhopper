@@ -1,0 +1,14 @@
+work:
+  breakpoint_regex: ^libapi_
+  state_type_regex: state
+  test_argumenet: ./tests/test
+
+test:
+  breakpoint_regex: ^libapi_
+  state_type_regex: state
+  test_argumenet: ./tests/test
+
+libpng:
+  breakpoint_regex: ^png_
+  state_type_regex: state
+  test_argumenet: .libs/pngtest
