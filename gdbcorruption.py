@@ -160,6 +160,8 @@ class UserCall():
         for arg in self.args:
             if arg.name not in self.targetStructs:
                 continue
+            if arg.val == "0x0":
+                continue
             if not arg.checkAccess():
                 continue
 
