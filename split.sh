@@ -4,13 +4,13 @@
 input_file="Todo_Funcs.txt"
 
 # Number of desired output files
-num_files=4
+num_files=3
 
 # Calculate the total line count of the input file
 total_lines=$(wc -l < "$input_file")
 
 # Calculate the number of lines per output file
-lines_per_file=$((total_lines / num_files - 1))
+lines_per_file=$((total_lines / num_files))
 
 # Split the file using 'split' command
 split -l "$lines_per_file" "$input_file" tmp
