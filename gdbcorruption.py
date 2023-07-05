@@ -50,6 +50,13 @@ class Argument():
 
         assert(msg != None)
         self.size = int(msg.strip().split(" ")[-1])
+    
+    def checkAccess(self):
+        try:
+            gdb.execute(f"p *{self.name}")
+            return True
+        except gdb.error:
+            return False
 
     def bitFlip(self, data):
         bitflip = b""
@@ -126,7 +133,7 @@ class UserCall():
 
             if checkCrash():
                 crashFuncHandler(self.name, arg.name, "Overflow", flip, 0, i)
-                continue
+                break
         
             corruptRestore()
 
@@ -153,7 +160,7 @@ class UserCall():
         for arg in self.args:
             if arg.name not in self.targetStructs:
                 continue
-            if arg.val == "0x0":
+            if not arg.checkAccess():
                 continue
 
             self.doFullCorrupt(arg, False)
