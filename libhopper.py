@@ -46,6 +46,8 @@ if __name__ == "__main__":
     tainted_reads = [event for event in read_events if event.is_symbolic]
     tainted_writes = [event for event in write_events if event.is_symbolic]
 
+    for i in tainted_jumps:
+        print(f"PC: {hex(i.ins_addr)} - JUMP: {i.addr}")
     for i in tainted_reads:
         print(f"PC: {hex(i.ins_addr)} - READ: {i.addr}")
     for i in tainted_writes:
