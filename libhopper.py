@@ -2,43 +2,39 @@ import angr
 import claripy
 
 
-def finish_func(simgr:angr.sim_manager.SimulationManager):
-    state = simgr.active[0]
-    # TODO: replace address
-    # return state.regs.rip.v == 0x555555555246 # libapi_read
-    return state.regs.rip.v == 0x55555555525c
-
 if __name__ == "__main__":
-    proj = angr.Project("./libapi_write", main_opts={"backend": "elfcore"})
+    proj_opts = {"main_opts": {"backend": "elfcore"}}
+    proj = angr.Project("./libapi_write", load_options=proj_opts)
 
-    added_options = set()
+    state_opts = set()
     # added_options.add(angr.options.AUTO_REFS)
-    added_options.add(angr.options.TRACK_MEMORY_ACTIONS)
-    added_options.add(angr.options.TRACK_JMP_ACTIONS)
+    state_opts.add(angr.options.TRACK_MEMORY_ACTIONS)
+    state_opts.add(angr.options.TRACK_JMP_ACTIONS)
     
     state:angr.sim_state.SimState
-    state = proj.factory.blank_state(add_options=added_options)
+    state = proj.factory.blank_state(add_options=state_opts)
 
     # Config symbolic state
     core_obj = proj.loader.elfcore_object
     assert(core_obj != None)
     for regval in core_obj.initial_register_values():
         try:
-            setattr(state.regs, regval[0], regval[1])
+            state.registers.store(regval[0], regval[1])
         except:
             pass
 
     # Overwrite internal state struct with symbolic value
-    # TODO: replace addr & length
+    # TODO: replace struct addr & size
     concrete_ctx = state.memory.load(state.regs.rdi.v, 0x68)
-    # TODO: replace length
+    # TODO: replace struct size
     symbolic_ctx = claripy.Concat(*[state.solver.BVS(f"sym_struct_{b}", 8) for b in range(0x68)])
     state.solver.add(concrete_ctx == symbolic_ctx)
-    # TODO: replace addr
+    # TODO: replace struct addr
     state.memory.store(state.regs.rdi.v, symbolic_ctx)
 
     simgr = proj.factory.simgr(state)
-    simgr.run(until=finish_func)
+    # TODO: replace func finish addr
+    simgr.run(until=lambda sm: sm.active[0].addr == 0x55555555525c)
 
     # Examine history
     new_state:angr.sim_state.SimState
