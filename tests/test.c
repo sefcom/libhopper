@@ -18,6 +18,8 @@ int main(int argc, char** argv, char** envp)
     libapi_write(&state, buf);
     printf("Libfake writeout: %s", buf);
 
+    libapi_exec(&state);
+
     libapi_close(&state);
 
     return EXIT_SUCCESS;

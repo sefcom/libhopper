@@ -1,4 +1,6 @@
 .vscode/
+__pycache__
+
 *.tar.gz
 *.bak
 *.pyc

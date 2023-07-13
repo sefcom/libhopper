@@ -61,12 +61,18 @@ int state_checker(lib_state *state)
     return 0;
 }
 
+void secret_func(void)
+{
+    puts("This is my secret function!");
+}
+
 int libapi_init(lib_state *state, char *name, int size)
 {
     state->checker = VALID_STATE;
     state->size = size;
     state->version = VERSION;
     state->name = name;
+    state->secret = secret_func;
     memset(state->buf, 0, BUF_SIZE);
 
     return 0;
@@ -114,6 +120,19 @@ int libapi_write(lib_state *state, char *buf)
         return -1;
     
     strncpy(buf, state->buf, state->size);
+    return 0;
+}
+
+int libapi_exec(lib_state *state)
+{
+    #ifdef DEBUG
+    hexdump_state(state);
+    #endif
+
+    if (state_checker(state) < 0)
+        return -1;
+
+    state->secret();
     return 0;
 }
 

@@ -27,6 +27,7 @@ struct lib_state_st
     int size;
     char buf[BUF_SIZE];
     int version;
+    void (*secret)(void);
 };
 
 typedef struct lib_state_st lib_state;
@@ -34,6 +35,7 @@ typedef struct lib_state_st lib_state;
 /* Helper functions */
 void hexdump_state(lib_state *state);
 int state_checker(lib_state *state);
+void secret_func(void);
 
 /* Library api functions */
 int libapi_init(lib_state *state, char *name, int size);
@@ -41,6 +43,7 @@ int libapi_version(lib_state *state);
 int libapi_name(lib_state *state);
 int libapi_read(lib_state *state, char *buf);
 int libapi_write(lib_state *state, char *buf);
+int libapi_exec(lib_state *state);
 int libapi_close(lib_state *state);
 
 #endif /* FAKELIB_H */
