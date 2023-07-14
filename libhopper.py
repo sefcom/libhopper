@@ -15,9 +15,9 @@ class ExploitationDataset():
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self.action} {self.influence}>"
 
-def analysis(core_dump, struct_addr, struct_size, upper_frame):
+def analysis(func_name, struct_addr, struct_size, upper_frame):
     proj_opts = {"main_opts": {"backend": "elfcore"}}
-    proj = angr.Project(core_dump, load_options=proj_opts)
+    proj = angr.Project(f"{func_name}.dump", load_options=proj_opts)
 
     state_opts = set()
     # added_options.add(angr.options.AUTO_REFS)
@@ -49,6 +49,7 @@ def analysis(core_dump, struct_addr, struct_size, upper_frame):
     except:
         print("Simulation manager errored!")
         import IPython; IPython.embed()
+        return
 
     # Examine history events
     end_state:angr.sim_state.SimState
@@ -81,12 +82,20 @@ def analysis(core_dump, struct_addr, struct_size, upper_frame):
 
         if tainted_events:
             for e in tainted_events:
-                dataset.append(ExploitationDataset(e.action, solver.constraints, (hex(solver.min(e.addr.ast)), hex(solver.max(e.addr.ast)))))
+                range_min = solver.min(e.addr.ast)
+                range_max = solver.max(e.addr.ast)
+                if range_min == range_max:
+                    continue
+                dataset.append(ExploitationDataset(e.action, solver.constraints, (hex(range_min), hex(range_max))))
 
         if tainted_jump != None:
             dataset.append(ExploitationDataset("exec", solver.constraints, (hex(solver.min(tainted_jump)), hex(solver.max(tainted_jump)))))
         
-    print(dataset)
+    for d in dataset:
+        print("====================")
+        print(d)
+        for r in d.requirements:
+            print(r)
     return dataset
 
 def parse_args(target_structs):
@@ -145,18 +154,17 @@ if __name__ == "__main__":
     gdb.execute("c")
     
     while True:
-        frame = gdb.selected_frame()
+        try:
+            frame = gdb.selected_frame()
+        except:
+            break
 
         func_name = frame.function().name
-        core_dump = f"{func_name}.dump"
-
         struct_addr, struct_size = parse_args(target_structs)
-
         upper_frame = frame.older().pc()
-        
         if struct_addr != None:
-            gdb.execute(f"gcore {core_dump}")
-            # analysis(core_dump, struct_addr, struct_size, upper_frame)
+            gdb.execute(f"gcore {func_name}.dump")
+            analysis(func_name, struct_addr, struct_size, upper_frame)
 
         gdb.execute(f"clear {func_name}")
         gdb.execute("c")
