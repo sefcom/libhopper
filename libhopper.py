@@ -1,6 +1,9 @@
 # import gdb
 import angr
 import claripy
+import logging
+
+logger = logging.getLogger("angr")
 
 
 def analysis(core_dump, struct_addr, struct_size, upper_frame):
@@ -18,7 +21,7 @@ def analysis(core_dump, struct_addr, struct_size, upper_frame):
     # Config symbolic state
     core_obj = proj.loader.elfcore_object
     assert(core_obj != None)
-    for regval in core_obj.initial_register_values():
+    for regval in core_obj.thread_registers().items():
         try:
             begin_state.registers.store(regval[0], regval[1])
         except:
@@ -38,22 +41,41 @@ def analysis(core_dump, struct_addr, struct_size, upper_frame):
         print("Simulation manager errored!")
         import IPython; IPython.embed()
 
-    # Examine history
+    # Examine history events
     end_state:angr.sim_state.SimState
     end_state = simgr.active[0]
-    read_events = end_state.history.filter_actions(read_from="mem")
-    write_events = end_state.history.filter_actions(write_to="mem")
-
-    tainted_reads = [event for event in read_events[::-1] if event.is_symbolic]
-    tainted_writes = [event for event in write_events[::-1] if event.is_symbolic]
-    tainted_jumps = [jump_target for jump_target in end_state.history.jump_targets if jump_target.symbolic]
-    constraints = [constraint.ast for constraint in end_state.history.constraints_since(begin_state)]
-
     solver = claripy.Solver()
-    solver.add(constraints)
-    read_ranges = [(solver.min(e.addr.ast), solver.max(e.addr.ast)) for e in tainted_reads]
-    write_ranges = [(solver.min(e.addr.ast), solver.max(e.addr.ast)) for e in tainted_writes]
-    jump_ranges = [(solver.min(e), solver.max(e)) for e in tainted_jumps]
+
+    # Carry out the informaiton in one-shot
+    # read_events = end_state.history.filter_actions(read_from="mem")
+    # write_events = end_state.history.filter_actions(write_to="mem")
+
+    # tainted_reads = [event for event in read_events[::-1] if event.addr.symbolic]
+    # tainted_writes = [event for event in write_events[::-1] if event.addr.symbolic]
+    # tainted_jumps = [jump_target for jump_target in end_state.history.jump_targets if jump_target.symbolic]
+    # constraints = [constraint.ast for constraint in end_state.history.constraints_since(begin_state)]
+
+    # solver.add(constraints)
+    # read_ranges = [(solver.min(e.addr.ast), solver.max(e.addr.ast)) for e in tainted_reads]
+    # write_ranges = [(solver.min(e.addr.ast), solver.max(e.addr.ast)) for e in tainted_writes]
+    # jump_ranges = [(solver.min(e), solver.max(e)) for e in tainted_jumps]
+
+    # Carry out the information step by step
+    histories = end_state.history.lineage
+    for h in histories:
+        tainted_events = [e for e in h.recent_events if isinstance(e, angr.state_plugins.sim_action.SimActionData) and e.addr.symbolic]
+        jump_target = h.jump_target
+        past_constraints = h.constraints_since(begin_state)
+
+        if tainted_events:
+            tainted_ranges = [(solver.min(e.addr.ast), solver.max(e.addr.ast)) for e in tainted_events]
+
+        if jump_target != None and jump_target.symbolic:
+            jump_range = (solver.min(jump_target), solver.max(jump_target))
+        
+        solver.add([c.ast for c in h.recent_constraints])
+
+    print()
 
 def parse_args(target_structs):
     struct_addr = None
