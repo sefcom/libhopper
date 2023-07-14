@@ -3,8 +3,17 @@ import angr
 import claripy
 import logging
 
+
 logger = logging.getLogger("angr")
 
+class ExploitationDataset():
+    def __init__(self, action, requirements, influence) -> None:
+        self.action = action
+        self.requirements = requirements
+        self.influence = influence
+    
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} {self.action} {self.influence}>"
 
 def analysis(core_dump, struct_addr, struct_size, upper_frame):
     proj_opts = {"main_opts": {"backend": "elfcore"}}
@@ -62,20 +71,23 @@ def analysis(core_dump, struct_addr, struct_size, upper_frame):
 
     # Carry out the information step by step
     histories = end_state.history.lineage
+    dataset: list[ExploitationDataset]
+    dataset = []
     for h in histories:
         tainted_events = [e for e in h.recent_events if isinstance(e, angr.state_plugins.sim_action.SimActionData) and e.addr.symbolic]
-        jump_target = h.jump_target
-        past_constraints = h.constraints_since(begin_state)
+        tainted_jump = h.jump_target if h.jump_target != None and h.jump_target.symbolic else None
+        solver.add([c.ast for c in h.recent_constraints])
+        solver.simplify()
 
         if tainted_events:
-            tainted_ranges = [(solver.min(e.addr.ast), solver.max(e.addr.ast)) for e in tainted_events]
+            for e in tainted_events:
+                dataset.append(ExploitationDataset(e.action, solver.constraints, (hex(solver.min(e.addr.ast)), hex(solver.max(e.addr.ast)))))
 
-        if jump_target != None and jump_target.symbolic:
-            jump_range = (solver.min(jump_target), solver.max(jump_target))
+        if tainted_jump != None:
+            dataset.append(ExploitationDataset("exec", solver.constraints, (hex(solver.min(tainted_jump)), hex(solver.max(tainted_jump)))))
         
-        solver.add([c.ast for c in h.recent_constraints])
-
-    print()
+    print(dataset)
+    return dataset
 
 def parse_args(target_structs):
     struct_addr = None
