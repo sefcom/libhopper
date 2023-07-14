@@ -27,6 +27,7 @@ struct lib_state_st
     int size;
     char buf[BUF_SIZE];
     int version;
+    int lottery_idx;
     void (*secret)(void);
 };
 
@@ -43,6 +44,7 @@ int libapi_version(lib_state *state);
 int libapi_name(lib_state *state);
 int libapi_read(lib_state *state, char *buf);
 int libapi_write(lib_state *state, char *buf);
+int libapi_lotto(lib_state *state);
 int libapi_exec(lib_state *state);
 int libapi_close(lib_state *state);
 

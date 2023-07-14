@@ -66,12 +66,15 @@ void secret_func(void)
     puts("This is my secret function!");
 }
 
+char *lottery_pool[] = {"small", "midium", "large", "super large"};
+
 int libapi_init(lib_state *state, char *name, int size)
 {
     state->checker = VALID_STATE;
     state->size = size;
     state->version = VERSION;
     state->name = name;
+    state->lottery_idx = 0;
     state->secret = secret_func;
     memset(state->buf, 0, BUF_SIZE);
 
@@ -120,6 +123,20 @@ int libapi_write(lib_state *state, char *buf)
         return -1;
     
     strncpy(buf, state->buf, state->size);
+    return 0;
+}
+
+int libapi_lotto(lib_state *state)
+{
+    #ifdef DEBUG
+    hexdump_state(state);
+    #endif
+
+    if (state_checker(state) < 0)
+        return -1;
+    
+    puts(lottery_pool[state->lottery_idx]);
+
     return 0;
 }
 
