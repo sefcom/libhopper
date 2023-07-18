@@ -1,4 +1,4 @@
-# import gdb
+import gdb
 import angr
 import claripy
 import logging
@@ -48,6 +48,7 @@ def analysis(func_name, struct_addr, struct_size, upper_frame):
         simgr.run(until=lambda sm: sm.active[0].addr == upper_frame)
     except:
         print("Simulation manager errored!")
+        print(simgr.errored)
         import IPython; IPython.embed()
         return
 
@@ -91,11 +92,15 @@ def analysis(func_name, struct_addr, struct_size, upper_frame):
         if tainted_jump != None:
             dataset.append(ExploitationDataset("exec", solver.constraints, (hex(solver.min(tainted_jump)), hex(solver.max(tainted_jump)))))
         
-    for d in dataset:
-        print("====================")
-        print(d)
-        for r in d.requirements:
-            print(r)
+    with open("fakelib.test", "a") as f:
+        for d in dataset:
+            print(f"========== {func_name} ==========")
+            f.write(f"========== {func_name} ==========\n")
+            print(d)
+            f.write(f"{repr(d)}\n")
+            for r in d.requirements:
+                print(r)
+                f.write(f"{repr(r)}\n")
     return dataset
 
 def parse_args(target_structs):
@@ -151,6 +156,11 @@ if __name__ == "__main__":
     gdb.execute(f"start {argv}")
     for regex in brkp_regex:
         gdb.rbreak(regex)
+    
+    with open("finished.test", "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            gdb.execute(f"clear {line.strip()}")
     gdb.execute("c")
     
     while True:
@@ -166,5 +176,7 @@ if __name__ == "__main__":
             gdb.execute(f"gcore {func_name}.dump")
             analysis(func_name, struct_addr, struct_size, upper_frame)
 
+        with open("finished.test", "a") as f:
+            f.write(f"{func_name}\n")
         gdb.execute(f"clear {func_name}")
         gdb.execute("c")
