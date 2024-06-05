@@ -7,17 +7,17 @@ CFLAGS          +=      -Wall -g -c
 
 all: test
 
-test: test.o libfakelib.a
-	@$(CC) -lm -o test test.o -L. -lfakelib
+test: test.o libdummy.a
+	@$(CC) -lm -o test test.o -L. -ldummy
 
 test.o: test.c
-	@$(CC) $(CFLAGS) test.c fakelib.h
+	@$(CC) $(CFLAGS) test.c dummy.h
 
-fakelib.o: fakelib.c
-	@$(CC) $(CFLAGS) fakelib.c fakelib.h
+dummy.o: dummy.c
+	@$(CC) $(CFLAGS) dummy.c dummy.h
 
-libfakelib.a: fakelib.o
-	@ar rcs libfakelib.a fakelib.o
+libdummy.a: dummy.o
+	@ar rcs libdummy.a dummy.o
 
 clean:
 	@rm -rf test *.o *.a *.gch

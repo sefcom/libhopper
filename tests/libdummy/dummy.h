@@ -1,5 +1,5 @@
-#ifndef FAKELIB_H
-#define FAKELIB_H
+#ifndef DUMMY_H
+#define DUMMY_H
 
 /*
  * This header file used to simulate the user library's LIBRARY.h file. It will
@@ -48,4 +48,4 @@ int libapi_lotto(lib_state *state);
 int libapi_exec(lib_state *state);
 int libapi_close(lib_state *state);
 
-#endif /* FAKELIB_H */
+#endif /* DUMMY_H */

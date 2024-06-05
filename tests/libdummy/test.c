@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "fakelib.h"
+#include "dummy.h"
 
 int main(int argc, char** argv, char** envp)
 {

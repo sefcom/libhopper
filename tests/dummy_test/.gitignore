@@ -1,9 +1,0 @@
-test
-*.o
-*.a
-*.gch
-
-gdbscript.py
-Crash_Funcs.txt
-Finish_Funcs.txt
-Todo_Funcs.txt

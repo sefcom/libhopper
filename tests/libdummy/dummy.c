@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "fakelib.h"
+#include "dummy.h"
 
 #define DEBUGx
 
