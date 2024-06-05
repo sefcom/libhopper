@@ -1,15 +1,15 @@
 [submodule "libpng"]
-	path = libpng
+	path = tests/libpng
 	url = https://github.com/pnggroup/libpng.git
 [submodule "zlib"]
-	path = zlib
+	path = tests/zlib
 	url = https://github.com/madler/zlib.git
 [submodule "curl"]
-	path = curl
+	path = tests/curl
 	url = https://github.com/curl/curl.git
 [submodule "libxml2"]
-	path = libxml2
+	path = tests/libxml2
 	url = https://github.com/GNOME/libxml2.git
 [submodule "openssl"]
-	path = openssl
+	path = tests/openssl
 	url = https://github.com/openssl/openssl.git
