@@ -5,3 +5,4 @@ __pycache__
 *.bak
 *.pyc
 *.dump
+.gdb_history

@@ -2,11 +2,12 @@ import gdb
 import angr
 import claripy
 import logging
+import os
 
 
 logger = logging.getLogger("angr")
 
-class ExploitationDataset():
+class ExploitationPrimitive():
     def __init__(self, action, requirements, influence) -> None:
         self.action = action
         self.requirements = requirements
@@ -49,7 +50,7 @@ def analysis(func_name, struct_addr, struct_size, upper_frame):
     except:
         print("Simulation manager errored!")
         print(simgr.errored)
-        import IPython; IPython.embed()
+        # import IPython; IPython.embed()
         return
 
     # Examine history events
@@ -73,7 +74,7 @@ def analysis(func_name, struct_addr, struct_size, upper_frame):
 
     # Carry out the information step by step
     histories = end_state.history.lineage
-    dataset: list[ExploitationDataset]
+    dataset: list[ExploitationPrimitive]
     dataset = []
     for h in histories:
         tainted_events = [e for e in h.recent_events if isinstance(e, angr.state_plugins.sim_action.SimActionData) and e.addr.symbolic]
@@ -87,12 +88,12 @@ def analysis(func_name, struct_addr, struct_size, upper_frame):
                 range_max = solver.max(e.addr.ast)
                 if range_min == range_max:
                     continue
-                dataset.append(ExploitationDataset(e.action, solver.constraints, (hex(range_min), hex(range_max))))
+                dataset.append(ExploitationPrimitive(e.action, solver.constraints, (hex(range_min), hex(range_max))))
 
         if tainted_jump != None:
-            dataset.append(ExploitationDataset("exec", solver.constraints, (hex(solver.min(tainted_jump)), hex(solver.max(tainted_jump)))))
+            dataset.append(ExploitationPrimitive("exec", solver.constraints, (hex(solver.min(tainted_jump)), hex(solver.max(tainted_jump)))))
         
-    with open("fakelib.test", "a") as f:
+    with open("result.out", "a") as f:
         for d in dataset:
             print(f"========== {func_name} ==========")
             f.write(f"========== {func_name} ==========\n")
@@ -176,6 +177,7 @@ if __name__ == "__main__":
             gdb.execute(f"gcore {func_name}.dump")
             analysis(func_name, struct_addr, struct_size, upper_frame)
 
+        # os.remove(f"{func_name}.dump")
         with open("finished.test", "a") as f:
             f.write(f"{func_name}\n")
         gdb.execute(f"clear {func_name}")
