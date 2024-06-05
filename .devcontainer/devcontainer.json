@@ -1,0 +1,8 @@
+{
+    "name": "libhopper-container",
+    "dockerFile": "Dockerfile",
+    "runArgs": [],
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+    "workspaceFolder": "/workspace",
+    "postCreateCommand": ""
+}
