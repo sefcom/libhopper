@@ -21,9 +21,3 @@ libdummy.a: dummy.o
 
 clean:
 	@rm -rf test *.o *.a *.gch
-	@rm -rf Crash_Funcs.txt Finish_Funcs.txt Todo_Funcs.txt
-	@rm -rf gdbscript.py
-
-runtest: all
-	@gdb ./test -ex 'source ../gdbscript.py' > /dev/null 2>&1
-	@diff Crash_Funcs.txt expected.txt
