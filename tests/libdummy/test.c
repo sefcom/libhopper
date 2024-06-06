@@ -12,11 +12,11 @@ int main(int argc, char** argv, char** envp)
     libapi_init(&state, "=== Test State ===", BUF_SIZE);
 
     libapi_name(&state);
-    printf("Libfake version: %d\n", libapi_version(&state));
+    printf("libdummy version: %d\n", libapi_version(&state));
 
     libapi_read(&state, "random contenets lalala\n");
     libapi_write(&state, buf);
-    printf("Libfake writeout: %s", buf);
+    printf("libdummy writeout: %s", buf);
 
     libapi_lotto(&state);
 
