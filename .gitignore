@@ -3,6 +3,8 @@ __pycache__
 
 *.tar.gz
 *.bak
+*.test
+*.out
 *.pyc
 *.dump
 .gdb_history
