@@ -8,10 +8,11 @@ import os
 logger = logging.getLogger("angr")
 
 class ExploitationPrimitive():
-    def __init__(self, action, requirements, influence) -> None:
+    def __init__(self, action, constraints, influence, example) -> None:
         self.action = action
-        self.requirements = requirements
+        self.constraints = constraints
         self.influence = influence
+        self.example = example
     
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self.action} {self.influence}>"
@@ -38,11 +39,11 @@ def analysis(func_name, struct_addr, struct_size, upper_frame):
             pass
 
     # Overwrite internal state struct with symbolic value
-    concrete_ctx = begin_state.memory.load(struct_addr, struct_size)
+    concrete_struct = begin_state.memory.load(struct_addr, struct_size)
     # symbolic_ctx = claripy.Concat(*[begin_state.solver.BVS(f"sym_struct_{b}", 8) for b in range(struct_size)])
-    symbolic_ctx = claripy.BVS("sym_struct", struct_size * 8)
-    begin_state.solver.add(concrete_ctx == symbolic_ctx)
-    begin_state.memory.store(struct_addr, symbolic_ctx)
+    symbolic_struct = claripy.BVS("sym_struct", struct_size * 8)
+    begin_state.solver.add(concrete_struct == symbolic_struct)
+    begin_state.memory.store(struct_addr, symbolic_struct)
 
     simgr = proj.factory.simgr(begin_state)
     try:
@@ -88,20 +89,21 @@ def analysis(func_name, struct_addr, struct_size, upper_frame):
                 range_max = solver.max(e.addr.ast)
                 if range_min == range_max:
                     continue
-                dataset.append(ExploitationPrimitive(e.action, solver.constraints, (hex(range_min), hex(range_max))))
+                example = solver.eval(symbolic_struct, 1)[0]
+                dataset.append(ExploitationPrimitive(e.action, solver.constraints, (hex(range_min), hex(range_max)), hex(example)))
 
         if tainted_jump != None:
-            dataset.append(ExploitationPrimitive("exec", solver.constraints, (hex(solver.min(tainted_jump)), hex(solver.max(tainted_jump)))))
-        
+            dataset.append(ExploitationPrimitive("exec", solver.constraints, (hex(solver.min(tainted_jump)), hex(solver.max(tainted_jump))), hex(solver.eval(symbolic_struct, 1)[0])))
+
     with open("result.out", "a") as f:
         for d in dataset:
-            print(f"========== {func_name} ==========")
             f.write(f"========== {func_name} ==========\n")
-            print(d)
             f.write(f"{repr(d)}\n")
-            for r in d.requirements:
-                print(r)
+            f.write(f"---------- constraints ----------\n")
+            for r in d.constraints:
                 f.write(f"{repr(r)}\n")
+            f.write(f"---------- example ----------\n")
+            f.write(f"{d.example}\n")
     return dataset
 
 def parse_args(target_structs):
@@ -142,17 +144,17 @@ if __name__ == "__main__":
         except gdb.error:
             pass
 
-    target_structs = ["state"]
-    brkp_regex = ["^libapi_"]
-    argv = ""
+    # target_structs = ["state"]
+    # brkp_regex = ["^libapi_"]
+    # argv = ""
     # Parameters for libpng
     # target_structs = ["png_ptr", "info_ptr"]
     # brkp_regex = ["^png_"]
     # argv = ""
     # Parameters for zlib
-    # target_structs = ["strm", "file"]
-    # brkp_regex = ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
-    # argv = ""
+    target_structs = ["strm"]
+    brkp_regex = ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
+    argv = ""
 
     gdb.execute(f"start {argv}")
     for regex in brkp_regex:
