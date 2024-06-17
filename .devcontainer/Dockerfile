@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo build-essential gcc gdb git make cmake \
+    build-essential gcc gdb git make cmake \
     python3 python3-pip python3-setuptools python3-dev && \
     apt-get clean autoclean && \
     apt-get autoremove

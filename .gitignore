@@ -1,5 +1,7 @@
 .vscode/
 __pycache__
+build/
+libhopper.egg-info/
 
 *.tar.gz
 *.bak

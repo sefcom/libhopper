@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='LibHopper',
+    name='libhopper',
     version='0.1',
     description='The LibHopper',
     packages=['libhopper'],
