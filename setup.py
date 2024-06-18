@@ -7,5 +7,6 @@ setup(
     packages=['libhopper'],
     install_requires=[
         'angr',
+        'pyyaml',
     ],
 )

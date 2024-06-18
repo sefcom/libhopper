@@ -7,6 +7,8 @@ from typing import Any
 class Analyzer:
     project: angr.Project
     state_opts: set
+    tainted_rw: list[angr.state_plugins.SimActionData]
+    tainted_jmp: list[claripy.ast.BV]
 
     def __init__(
         self,
@@ -38,10 +40,10 @@ class Analyzer:
                 pass
 
         # Overwrite internal state struct with symbolic value
-        concrete_struct: claripy.ast.bv.BV = begin_state.memory.load(
+        concrete_struct: claripy.ast.BV = begin_state.memory.load(
             struct_addr, struct_size
         )
-        symbolic_struct: claripy.ast.bv.BV = claripy.BVS("sym_struct", struct_size * 8)
+        symbolic_struct: claripy.ast.BV = claripy.BVS("sym_struct", struct_size * 8)
         begin_state.solver.add(concrete_struct == symbolic_struct)
         begin_state.memory.store(struct_addr, symbolic_struct)
 
@@ -53,11 +55,12 @@ class Analyzer:
 
         # Examine history events
         end_state: angr.sim_state.SimState = simgr.active[0]
-        solver: claripy.solvers.Solver = claripy.Solver()
 
         # Carry out the information step by step
         for h in end_state.history.lineage:
             h: angr.state_plugins.SimStateHistory
+            solver = h.state.solver
+
             tainted_events = [
                 e
                 for e in h.recent_events
@@ -71,10 +74,13 @@ class Analyzer:
             solver.add([c.ast for c in h.recent_constraints])
             solver.simplify()
 
+            # TODO: Process tainted events and jumps
             if tainted_events:
+                # TODO
                 print(tainted_events)
                 pass
 
-            if tainted_jump:
+            if tainted_jump != None:
+                # TODO
                 print(tainted_jump)
                 pass

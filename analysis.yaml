@@ -1,0 +1,36 @@
+# Library internal struct analysis configuration file
+
+################################################################################
+# Global configuration
+################################################################################
+core_dump_dir: "/tmp/core_dump"
+# TODO
+
+
+################################################################################
+# GDB core dump file generation configuration
+################################################################################
+
+################################################################################
+# For libdummy.so
+################################################################################
+# The struct variable names in the api call (some times same struct but with different names are used in the api call)
+struct_names: [ "dummy_struct" ]
+# The regex to match the function names in the library
+brkp_regex: ["^libapi_"]
+# The arguments to pass to the library self-test program
+prog_argv: ""
+
+################################################################################
+# For libz
+################################################################################
+# struct_names: ["strm"]
+# brkp_regex: ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
+# prog_argv: ""
+
+################################################################################
+# For libpng
+################################################################################
+# struct_names: ["png_ptr", "info_ptr"]
+# brkp_regex: ["^png_"]
+# prog_argv: ""
