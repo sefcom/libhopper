@@ -69,7 +69,7 @@ def analysis(
 
         # Extract primitives
         for e in tainted_events:
-            addr_range = (solver.min(e.addr), solver.max(e.addr))
+            addr_range = (solver.min(e.addr.ast), solver.max(e.addr.ast))
             if addr_range[0] == addr_range[1]:
                 continue
             poc_vector: bytes = bytes.fromhex(hex(solver.eval(e.addr.ast)))
