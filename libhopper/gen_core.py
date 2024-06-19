@@ -1,5 +1,6 @@
 import gdb
-from .parse_config import parse_config
+from libhopper.parse_config import parse_config
+import os
 
 
 def config_gdb():
@@ -20,7 +21,7 @@ def config_gdb():
             pass
 
 
-def parse_args(target_structs):
+def parse_args(struct_names):
     struct_addr = None
     struct_size = None
 
@@ -32,7 +33,7 @@ def parse_args(target_structs):
     for arg in args:
         temp = arg.split(" ")
         arg_name = temp[0]
-        if arg_name in target_structs:
+        if arg_name in struct_names:
             struct = gdb.parse_and_eval(arg_name).dereference()
             struct_addr = int(struct.address)
             struct_size = struct.type.sizeof
@@ -40,20 +41,24 @@ def parse_args(target_structs):
     return struct_addr, struct_size
 
 
-def main(config_file):
-    config = parse_config(config_file)
-    core_dump_dir = config["core_dump_dir"]
-    struct_names = config["struct_names"]
-    brkp_regex = config["brkp_regex"]
-    test_argv = config["test_argv"]
+def main(gen_core_config_file, analysis_config_file):
+    gen_core_config = parse_config(gen_core_config_file)
+    core_dump_dir = gen_core_config["core_dump_dir"]
+    struct_names = gen_core_config["struct_names"]
+    brkp_regex = gen_core_config["brkp_regex"]
+    test_argv = gen_core_config["test_argv"]
 
     # Check core dump directory
     gdb.execute(f"shell mkdir -p {core_dump_dir}")
 
+    # Install breakpoints
     gdb.execute(f"start {test_argv}")
     for regex in brkp_regex:
         gdb.rbreak(regex)
     gdb.execute("continue")
+
+    with open(analysis_config_file, "w") as f:
+        f.write("")
 
     while True:
         try:
@@ -63,9 +68,18 @@ def main(config_file):
 
         func_name = frame.function().name
         struct_addr, struct_size = parse_args(struct_names)
-        upper_frame = frame.older().pc()
+        ret_addr = frame.older().pc()
         if struct_addr != None and struct_size != None:
-            gdb.execute(f"generate-core-file {core_dump_dir}{func_name}.dump")
+            core_file = f"{core_dump_dir}{func_name}.dump"
+            gdb.execute(f"generate-core-file {core_file}")
+
+            # Write analysis config file
+            with open(analysis_config_file, "a") as f:
+                f.write("---\n")
+                f.write(f"core_file: {core_file}\n")
+                f.write(f"struct_addr: {struct_addr}\n")
+                f.write(f"struct_size: {struct_size}\n")
+                f.write(f"ret_addr: {ret_addr}\n")
 
         gdb.execute(f"clear {func_name}")
         gdb.execute("continue")
@@ -73,4 +87,7 @@ def main(config_file):
 
 # Only run in gdb, not anywhere else
 if __name__ == "__main__":
-    main("analysis.yaml")
+    env = os.environ
+    gen_core_config = env["GEN_CORE_CONFIG"]
+    analysis_config = env["ANALYSIS_CONFIG"]
+    main(gen_core_config, analysis_config)
