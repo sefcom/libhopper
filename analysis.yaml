@@ -3,8 +3,7 @@
 ################################################################################
 # Global configuration
 ################################################################################
-core_dump_dir: "/tmp/core_dump"
-# TODO
+core_dump_dir: "/tmp/libapi_dump/"
 
 
 ################################################################################
@@ -18,19 +17,23 @@ core_dump_dir: "/tmp/core_dump"
 struct_names: [ "dummy_struct" ]
 # The regex to match the function names in the library
 brkp_regex: ["^libapi_"]
+# The test program to run to generate the core dump
+test_name: "./tests/libdummy/test"
+# The test program environment variables
+test_env: {"LD_LIBRARY_PATH": "./tests/libdummy/"}
 # The arguments to pass to the library self-test program
-prog_argv: ""
+test_argv: ""
 
 ################################################################################
 # For libz
 ################################################################################
 # struct_names: ["strm"]
 # brkp_regex: ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
-# prog_argv: ""
+# test_argv: ""
 
 ################################################################################
 # For libpng
 ################################################################################
 # struct_names: ["png_ptr", "info_ptr"]
 # brkp_regex: ["^png_"]
-# prog_argv: ""
+# test_argv: ""

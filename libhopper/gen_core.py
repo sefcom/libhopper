@@ -1,6 +1,7 @@
 import gdb
 from .parse_config import parse_config
 
+
 def config_gdb():
     gdb_setup = (
         "set confirm off",
@@ -18,6 +19,7 @@ def config_gdb():
         except gdb.error:
             pass
 
+
 def parse_args(target_structs):
     struct_addr = None
     struct_size = None
@@ -34,16 +36,21 @@ def parse_args(target_structs):
             struct = gdb.parse_and_eval(arg_name).dereference()
             struct_addr = int(struct.address)
             struct_size = struct.type.sizeof
-    
+
     return struct_addr, struct_size
+
 
 def main(config_file):
     config = parse_config(config_file)
+    core_dump_dir = config["core_dump_dir"]
     struct_names = config["struct_names"]
     brkp_regex = config["brkp_regex"]
-    prog_argv = config["prog_argv"]
+    test_argv = config["test_argv"]
 
-    gdb.execute(f"start {prog_argv}")
+    # Check core dump directory
+    gdb.execute(f"shell mkdir -p {core_dump_dir}")
+
+    gdb.execute(f"start {test_argv}")
     for regex in brkp_regex:
         gdb.rbreak(regex)
     gdb.execute("continue")
@@ -58,10 +65,12 @@ def main(config_file):
         struct_addr, struct_size = parse_args(struct_names)
         upper_frame = frame.older().pc()
         if struct_addr != None and struct_size != None:
-            gdb.execute(f"generate-core-file {func_name}.dump")
+            gdb.execute(f"generate-core-file {core_dump_dir}{func_name}.dump")
 
         gdb.execute(f"clear {func_name}")
         gdb.execute("continue")
 
+
+# Only run in gdb, not anywhere else
 if __name__ == "__main__":
     main("analysis.yaml")

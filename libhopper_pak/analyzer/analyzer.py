@@ -71,13 +71,16 @@ class Analyzer:
                 if h.jump_target != None and h.jump_target.symbolic
                 else None
             )
-            solver.add([c.ast for c in h.recent_constraints])
-            solver.simplify()
 
             # TODO: Process tainted events and jumps
             if tainted_events:
-                # TODO
                 print(tainted_events)
+                for e in tainted_events:
+                    range_min = solver.min(e.addr.ast)
+                    range_max = solver.max(e.addr.ast)
+                    if range_min == range_max:
+                        continue
+                    self.tainted_rw.append(e)
                 pass
 
             if tainted_jump != None:
