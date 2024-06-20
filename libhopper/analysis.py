@@ -12,7 +12,6 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
     struct_addr = analysis_config[index]["struct_addr"]
     struct_size = analysis_config[index]["struct_size"]
     ret_addr = analysis_config[index]["ret_addr"]
-    
 
     # Load the core dump
     proj_ops = {"backend": "elfcore"}
@@ -37,17 +36,13 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
             pass
 
     # Overwrite internal state struct with symbolic value
-    concrete_struct: claripy.ast.BV = begin_state.memory.load(
-        struct_addr, struct_size
-    )
+    concrete_struct: claripy.ast.BV = begin_state.memory.load(struct_addr, struct_size)
     symbolic_struct: claripy.ast.BV = claripy.BVS("sym_struct", struct_size * 8)
     begin_state.solver.add(concrete_struct == symbolic_struct)
     begin_state.memory.store(struct_addr, symbolic_struct)
 
     # Run simulation manager
-    simgr: angr.sim_manager.SimulationManager = project.factory.simgr(
-        begin_state
-    )
+    simgr: angr.sim_manager.SimulationManager = project.factory.simgr(begin_state)
     try:
         simgr.run(until=lambda sm: sm.active[0].addr == ret_addr)
     except Exception as e:
@@ -67,13 +62,12 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
         solver.simplify()
 
         tainted_events = [
-            e for e in h.recent_actions
+            e
+            for e in h.recent_actions
             if isinstance(e, angr.state_plugins.SimActionData) and e.is_symbolic
         ]
         tainted_jump = (
-            h.jump_target
-            if h.jump_target != None and h.jump_target.symbolic
-            else None
+            h.jump_target if h.jump_target != None and h.jump_target.symbolic else None
         )
 
         # Extract primitives
@@ -81,13 +75,17 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
             addr_range = (solver.min(e.addr.ast), solver.max(e.addr.ast))
             if addr_range[0] == addr_range[1]:
                 continue
-            poc_vector: bytes = bytes.fromhex(hex(solver.eval(symbolic_struct, 1)[0])[2:])
+            poc_vector: bytes = bytes.fromhex(
+                hex(solver.eval(symbolic_struct, 1)[0])[2:]
+            )
             primitive = Primitive(e.action, solver.constraints, addr_range, poc_vector)
             primitives.append(primitive)
 
         if tainted_jump != None:
             addr_range = (solver.min(tainted_jump), solver.max(tainted_jump))
-            poc_vector: bytes = bytes.fromhex(hex(solver.eval(symbolic_struct, 1)[0])[2:])
+            poc_vector: bytes = bytes.fromhex(
+                hex(solver.eval(symbolic_struct, 1)[0])[2:]
+            )
             primitive = Primitive("exec", solver.constraints, addr_range, poc_vector)
             primitives.append(primitive)
 
