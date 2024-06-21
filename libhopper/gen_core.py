@@ -55,10 +55,18 @@ def main(gen_core_config_file, analysis_config_file):
     gdb.execute(f"start {test_argv}")
     for regex in brkp_regex:
         gdb.rbreak(regex)
-    gdb.execute("continue")
 
+    # Write analysis configuration file
     with open(analysis_config_file, "w") as f:
-        f.write("")
+        f.write("# Auto-generated analysis configuration file\n")
+
+    # Extract instructions angr should avoid
+    avoid_instrs = {}
+    avoid_instrs[hex(gdb.parse_and_eval("_dl_runtime_resolve_xsavec+108"))] = 5
+    avoid_instrs[hex(gdb.parse_and_eval("_dl_runtime_resolve_xsavec+136"))] = 5
+
+    # Resume execution
+    gdb.execute("continue")
 
     while True:
         try:
@@ -77,9 +85,10 @@ def main(gen_core_config_file, analysis_config_file):
             with open(analysis_config_file, "a") as f:
                 f.write("---\n")
                 f.write(f"core_file: {core_file}\n")
-                f.write(f"struct_addr: {struct_addr}\n")
-                f.write(f"struct_size: {struct_size}\n")
-                f.write(f"ret_addr: {ret_addr}\n")
+                f.write(f"struct_addr: {hex(struct_addr)}\n")
+                f.write(f"struct_size: {hex(struct_size)}\n")
+                f.write(f"ret_addr: {hex(ret_addr)}\n")
+                f.write(f"avoid_instrs: {avoid_instrs}\n")
 
         gdb.execute(f"clear {func_name}")
         gdb.execute("continue")

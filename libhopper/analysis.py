@@ -5,6 +5,9 @@ from .parse_config import parse_all
 from .primitive import Primitive
 
 
+def nop(state):
+    pass
+
 def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
     # Parse configuration
     analysis_config = parse_all(analysis_config_file)
@@ -12,10 +15,15 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
     struct_addr = analysis_config[index]["struct_addr"]
     struct_size = analysis_config[index]["struct_size"]
     ret_addr = analysis_config[index]["ret_addr"]
+    avoid_instrs = analysis_config[index]["avoid_instrs"]
 
     # Load the core dump
     proj_ops = {"backend": "elfcore"}
     project = angr.Project(core_file, main_opts=proj_ops)
+
+    # Hook instructions to avoid
+    for addr, size in avoid_instrs.items():
+        project.hook(int(addr, 16), nop, length=size)
 
     # Prepare state options
     state_opts = set()
@@ -46,7 +54,7 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
     try:
         simgr.run(until=lambda sm: sm.active[0].addr == ret_addr)
     except Exception as e:
-        # TODO: Fix this, no error should be thrown
+        # TODO: Fix this, path explosion
         print("Simulation manager errored!")
         return []
 
