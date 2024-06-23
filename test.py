@@ -1,2 +1,4 @@
-import sys, angr
-print(sys.executable)
+from libhopper import analysis
+
+
+analysis("analysis.yaml", 5)

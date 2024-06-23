@@ -5,14 +5,18 @@ gen_core_config = "gen_core.yaml"
 analysis_config = "analysis.yaml"
 
 def gen_core_dump():
+    global gen_core_config, analysis_config
+
     # Parse configuration
     config = parse_config(gen_core_config)
     test_name = config["test_name"]
     test_env = config["test_env"]
+    core_dump_dir = config["core_dump_dir"]
+    analysis_config = core_dump_dir + analysis_config
 
     # Generate core dump
     test_env["GEN_CORE_CONFIG"] = os.getcwd() + "/" + gen_core_config
-    test_env["ANALYSIS_CONFIG"] = os.getcwd() + "/" + analysis_config
+    test_env["ANALYSIS_CONFIG"] = analysis_config
     curr_env = os.environ.copy()
     curr_env.update(test_env)
 

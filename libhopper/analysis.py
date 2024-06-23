@@ -5,9 +5,6 @@ from .parse_config import parse_all
 from .primitive import Primitive
 
 
-def nop(state):
-    pass
-
 def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
     # Parse configuration
     analysis_config = parse_all(analysis_config_file)
@@ -15,15 +12,10 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
     struct_addr = analysis_config[index]["struct_addr"]
     struct_size = analysis_config[index]["struct_size"]
     ret_addr = analysis_config[index]["ret_addr"]
-    avoid_instrs = analysis_config[index]["avoid_instrs"]
 
     # Load the core dump
     proj_ops = {"backend": "elfcore"}
     project = angr.Project(core_file, main_opts=proj_ops)
-
-    # Hook instructions to avoid
-    for addr, size in avoid_instrs.items():
-        project.hook(int(addr, 16), nop, length=size)
 
     # Prepare state options
     state_opts = set()
@@ -51,12 +43,7 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
 
     # Run simulation manager
     simgr: angr.sim_manager.SimulationManager = project.factory.simgr(begin_state)
-    try:
-        simgr.run(until=lambda sm: sm.active[0].addr == ret_addr)
-    except Exception as e:
-        # TODO: Fix this, path explosion
-        print("Simulation manager errored!")
-        return []
+    simgr.run(until=lambda sm: sm.active[0].addr == ret_addr)
 
     # Examine history events
     end_state: angr.sim_state.SimState = simgr.active[0]
@@ -80,6 +67,7 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
 
         # Extract primitives
         for e in tainted_events:
+            # TODO: More detailed analysis on this
             addr_range = (solver.min(e.addr.ast), solver.max(e.addr.ast))
             if addr_range[0] == addr_range[1]:
                 continue

@@ -144,17 +144,17 @@ if __name__ == "__main__":
         except gdb.error:
             pass
 
-    # target_structs = ["state"]
-    # brkp_regex = ["^libapi_"]
-    # argv = ""
+    target_structs = ["state"]
+    brkp_regex = ["^libapi_"]
+    argv = ""
     # Parameters for libpng
     # target_structs = ["png_ptr", "info_ptr"]
     # brkp_regex = ["^png_"]
     # argv = ""
     # Parameters for zlib
-    target_structs = ["strm"]
-    brkp_regex = ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
-    argv = ""
+    # target_structs = ["strm"]
+    # brkp_regex = ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
+    # argv = ""
 
     gdb.execute(f"start {argv}")
     for regex in brkp_regex:
