@@ -15,4 +15,4 @@ class Primitive:
         self.poc_vector = poc_vector
     
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.action} {self.addr_range}>"
+        return f"<{self.__class__.__name__} {self.action} {[hex(r) for r in self.addr_range]}>"

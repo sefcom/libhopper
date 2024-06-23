@@ -67,7 +67,7 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
 
         # Extract primitives
         for e in tainted_events:
-            # TODO: More detailed analysis on this
+            # TODO: More detailed analysis on this, identify base+shift
             addr_range = (solver.min(e.addr.ast), solver.max(e.addr.ast))
             if addr_range[0] == addr_range[1]:
                 continue
