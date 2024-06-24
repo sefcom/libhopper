@@ -1,4 +1,4 @@
-from libhopper import parse_config
+from libhopper import parse_config, parse_all, analysis
 import subprocess, os
 
 gen_core_config = "gen_core.yaml"
@@ -11,8 +11,6 @@ def gen_core_dump():
     config = parse_config(gen_core_config)
     test_name = config["test_name"]
     test_env = config["test_env"]
-    core_dump_dir = config["core_dump_dir"]
-    analysis_config = core_dump_dir + analysis_config
 
     # Generate core dump
     test_env["GEN_CORE_CONFIG"] = os.getcwd() + "/" + gen_core_config
@@ -24,8 +22,11 @@ def gen_core_dump():
     subprocess.run(command, env=curr_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 if __name__ == "__main__":
+    config = parse_config(gen_core_config)
+    core_dump_dir = config["core_dump_dir"]
+    analysis_config = core_dump_dir + analysis_config
     gen_core_dump()
 
     # Analyze core dump
-    # for i in len(parse_all(analysis_config)):
-    #     analysis(analysis_config, i)
+    for i in range(len(parse_all(analysis_config))):
+        analysis(analysis_config, i)
