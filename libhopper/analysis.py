@@ -6,6 +6,8 @@ from .primitive import Primitive
 
 
 def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
+    print(f"Analysis {index}")
+
     # Parse configuration
     analysis_config = parse_all(analysis_config_file)
     core_file = analysis_config[index]["core_file"]
@@ -72,36 +74,19 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
             addr_range = (solver.min(ast), solver.max(ast))
             if addr_range[0] == addr_range[1]:
                 continue
-            poc_vector: bytes = bytes.fromhex(
-                hex(solver.eval(symbolic_struct, 1)[0])[2:]
+            poc_vector = solver.eval(ast, 1)[0]
+            primitive = Primitive(
+                e.action, solver.constraints, addr_range, ast, poc_vector
             )
-            primitive = Primitive(e.action, solver.constraints, addr_range, poc_vector)
-
-            if len(ast.args) > 1:
-                primitive.action = "relative " + primitive.action
-                primitive.addr_range = (
-                    ast.args[0].concrete_value,
-                    (solver.min(ast.args[1]), solver.max(ast.args[1])),
-                )
 
             primitives.append(primitive)
 
         if tainted_jump != None:
             addr_range = (solver.min(tainted_jump), solver.max(tainted_jump))
-            poc_vector: bytes = bytes.fromhex(
-                hex(solver.eval(symbolic_struct, 1)[0])[2:]
+            poc_vector = solver.eval(tainted_jump, 1)[0]
+            primitive = Primitive(
+                "exec", solver.constraints, addr_range, tainted_jump, poc_vector
             )
-            primitive = Primitive("exec", solver.constraints, addr_range, poc_vector)
-
-            if len(tainted_jump.args) > 1:
-                primitive.action = "relative " + primitive.action
-                primitive.addr_range = (
-                    tainted_jump.args[0].concrete_value,
-                    (
-                        solver.min(tainted_jump.args[1]),
-                        solver.max(tainted_jump.args[1]),
-                    ),
-                )
 
             primitives.append(primitive)
 
