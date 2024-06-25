@@ -6,7 +6,7 @@
 # The path to the GDB core dump file
 core_dump_dir: "/tmp/libdummy_dump/"
 # The struct variable names in the api call (some times same struct but with different names are used in the api call)
-struct_names: [ "state" ]
+struct_names: ["state"]
 # The regex to match the function names in the library
 brkp_regex: ["^libapi_"]
 # The test program to run to generate the core dump
@@ -19,8 +19,11 @@ test_argv: ""
 ################################################################################
 # For libz
 ################################################################################
+# core_dump_dir: "/tmp/libz_dump/"
 # struct_names: ["strm"]
 # brkp_regex: ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
+# test_name: "./tests/libz/test"
+# test_env: {"LD_BIND_NOW": "1", "LD_LIBRARY_PATH": "./tests/libz/"}
 # test_argv: ""
 
 ################################################################################
