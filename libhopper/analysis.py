@@ -68,13 +68,22 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
         # Extract primitives
         for e in tainted_events:
             # TODO: More detailed analysis on this, identify base+shift
-            addr_range = (solver.min(e.addr.ast), solver.max(e.addr.ast))
+            ast: claripy.ast.BV = e.addr.ast
+            addr_range = (solver.min(ast), solver.max(ast))
             if addr_range[0] == addr_range[1]:
                 continue
             poc_vector: bytes = bytes.fromhex(
                 hex(solver.eval(symbolic_struct, 1)[0])[2:]
             )
             primitive = Primitive(e.action, solver.constraints, addr_range, poc_vector)
+
+            if len(ast.args) > 1:
+                primitive.action = "relative " + primitive.action
+                primitive.addr_range = (
+                    ast.args[0].concrete_value,
+                    (solver.min(ast.args[1]), solver.max(ast.args[1])),
+                )
+
             primitives.append(primitive)
 
         if tainted_jump != None:
@@ -83,6 +92,17 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
                 hex(solver.eval(symbolic_struct, 1)[0])[2:]
             )
             primitive = Primitive("exec", solver.constraints, addr_range, poc_vector)
+
+            if len(tainted_jump.args) > 1:
+                primitive.action = "relative " + primitive.action
+                primitive.addr_range = (
+                    tainted_jump.args[0].concrete_value,
+                    (
+                        solver.min(tainted_jump.args[1]),
+                        solver.max(tainted_jump.args[1]),
+                    ),
+                )
+
             primitives.append(primitive)
 
     print(primitives)

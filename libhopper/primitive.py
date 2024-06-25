@@ -13,6 +13,12 @@ class Primitive:
         self.constraints = constraints
         self.addr_range = addr_range
         self.poc_vector = poc_vector
-    
+
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.action} {[hex(r) for r in self.addr_range]}>"
+        def recur_hex(value):
+            if isinstance(value, tuple):
+                return tuple(recur_hex(item) for item in value)
+            else:
+                return hex(value)
+
+        return f"<{self.__class__.__name__} {self.action} {recur_hex(self.addr_range)}>"
