@@ -10,3 +10,7 @@ libhopper.egg-info/
 *.pyc
 *.dump
 .gdb_history
+
+# Some output of the library tests
+foo.gz
+pngout.png
