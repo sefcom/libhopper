@@ -12,5 +12,9 @@ libhopper.egg-info/
 .gdb_history
 
 # Some output of the library tests
+# libz
 foo.gz
+# libpng
 pngout.png
+# libxml2
+test.out
