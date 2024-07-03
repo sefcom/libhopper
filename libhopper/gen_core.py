@@ -21,30 +21,29 @@ def config_gdb():
             pass
 
 
-def parse_args(struct_names):
-    struct_addr = None
-    struct_size = None
-
+def parse_args(struct_type):
     args = str(gdb.execute("info args", to_string=True))
     if "No arguments" in args:
-        return struct_addr, struct_size
+        return None
 
     args = args.strip().split("\n")
     for arg in args:
         temp = arg.split(" ")
         arg_name = temp[0]
-        if arg_name in struct_names:
+        try:
             struct = gdb.parse_and_eval(arg_name).dereference()
-            struct_addr = int(struct.address)
-            struct_size = struct.type.sizeof
-
-    return struct_addr, struct_size
+        except:
+            continue
+        if struct.type.name == struct_type:
+            return int(struct.address)
+    
+    return None
 
 
 def main(gen_core_config_file, analysis_config_file):
     gen_core_config = parse_config(gen_core_config_file)
     core_dump_dir = gen_core_config["core_dump_dir"]
-    struct_names = gen_core_config["struct_names"]
+    struct_type = gen_core_config["struct_type"]
     brkp_regex = gen_core_config["brkp_regex"]
     test_argv = gen_core_config["test_argv"]
 
@@ -63,26 +62,31 @@ def main(gen_core_config_file, analysis_config_file):
     # Resume execution
     gdb.execute("continue")
 
+    # Look up struct size
+    struct_size = gdb.lookup_type(struct_type).sizeof
+
     while True:
         try:
             frame = gdb.selected_frame()
         except:
             break
 
-        func_name = frame.function().name
-        struct_addr, struct_size = parse_args(struct_names)
-        ret_addr = frame.older().pc()
-        if struct_addr != None and struct_size != None:
-            core_file = f"{core_dump_dir}{func_name}.dump"
-            gdb.execute(f"generate-core-file {core_file}")
+        struct_addr = parse_args(struct_type)
+        if struct_addr == None:
+            continue
 
-            # Write analysis config file
-            with open(analysis_config_file, "a") as f:
-                f.write("---\n")
-                f.write(f"core_file: {core_file}\n")
-                f.write(f"struct_addr: {hex(struct_addr)}\n")
-                f.write(f"struct_size: {hex(struct_size)}\n")
-                f.write(f"ret_addr: {hex(ret_addr)}\n")
+        func_name = frame.function().name
+        ret_addr = frame.older().pc()
+        core_file = f"{core_dump_dir}{func_name}.dump"
+        gdb.execute(f"generate-core-file {core_file}")
+
+        # Write analysis config file
+        with open(analysis_config_file, "a") as f:
+            f.write("---\n")
+            f.write(f"core_file: {core_file}\n")
+            f.write(f"struct_addr: {hex(struct_addr)}\n")
+            f.write(f"struct_size: {hex(struct_size)}\n")
+            f.write(f"ret_addr: {hex(ret_addr)}\n")
 
         gdb.execute(f"clear {func_name}")
         gdb.execute("continue")

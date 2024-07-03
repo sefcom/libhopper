@@ -26,12 +26,12 @@ if __name__ == "__main__":
     config = parse_config(gen_core_config)
     core_dump_dir = config["core_dump_dir"]
     analysis_config = core_dump_dir + analysis_config
-    # gen_core_dump()
+    gen_core_dump()
 
     # Analyze core dump
     # for i in range(10, len(parse_all(analysis_config))):
     #     print(f"Analysis {i}")
     #     analysis(analysis_config, i)
     # analysis(analysis_config, 9)
-    with mp.Pool(4) as pool:
-        pool.starmap(analysis, [(analysis_config, i) for i in range(10)])
+    # with mp.Pool(4) as pool:
+    #     pool.starmap(analysis, [(analysis_config, i) for i in range(10)])
