@@ -14,6 +14,8 @@ libhopper.egg-info/
 # Some output of the library tests
 # libz
 foo.gz
+# libbz2
+sample1.rb2
 # libpng
 pngout.png
 # libxml2
