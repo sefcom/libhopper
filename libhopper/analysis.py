@@ -1,8 +1,73 @@
 import angr
 import claripy
 import cle
+from itertools import chain
 from .parse_config import parse_all
 from .primitive import Primitive
+
+
+def tainted_ast_to_primitive(
+    ast: claripy.ast.BV, mem_range: chain[int], solver: claripy.Solver, action: str
+) -> Primitive:
+
+    # Extract possiable base
+    base = 0
+    for c in ast.children_asts():
+        if c.concrete and c.concrete_value in mem_range:
+            base = c.concrete_value
+            break
+
+    if base != 0:
+        action = f"relative-{action}"
+
+    addr_range = (solver.min(ast) - base, solver.max(ast) - base)
+    poc_vector = solver.eval(ast, 1)[0]
+    primitive = Primitive(
+        action, solver.constraints, (base, addr_range), ast, poc_vector
+    )
+
+    return primitive
+
+
+def analyze_history(project: angr.Project, end_state: angr.SimState) -> list[Primitive]:
+    primitives: list[Primitive] = []
+    solver = claripy.Solver()
+    mem_range = chain.from_iterable(
+        (
+            range(obj.min_addr, obj.max_addr + 1)
+            for obj in project.loader.all_elf_objects
+        )
+    )
+
+    # Carry out the information step by step
+    for h in end_state.history.lineage:
+        h: angr.state_plugins.SimStateHistory
+        solver.add([c.ast for c in h.recent_constraints])
+        solver.simplify()
+
+        tainted_events = [
+            e
+            for e in h.recent_actions
+            if isinstance(e, angr.state_plugins.SimActionData) and e.addr.symbolic
+        ]
+
+        tainted_jump = (
+            h.jump_target if h.jump_target != None and h.jump_target.symbolic else None
+        )
+
+        # Extract primitives
+        for e in tainted_events:
+            primitives.append(
+                tainted_ast_to_primitive(e.addr.ast, mem_range, solver, e.action)
+            )
+
+        if tainted_jump != None:
+            primitives.append(
+                tainted_ast_to_primitive(tainted_jump, mem_range, solver, "exec")
+            )
+
+    print(primitives)
+    return primitives
 
 
 def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
@@ -25,12 +90,10 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
     state_opts.add(angr.options.TRACK_JMP_ACTIONS)
 
     # Prepare initial state
-    begin_state: angr.sim_state.SimState = project.factory.blank_state(
-        add_options=state_opts
-    )
+    begin_state: angr.SimState = project.factory.blank_state(add_options=state_opts)
 
     # Config blank state
-    core_obj: cle.backends.ELFCore = project.loader.elfcore_object
+    core_obj: cle.ELFCore = project.loader.elfcore_object
     for regval in core_obj.thread_registers().items():
         try:
             begin_state.registers.store(regval[0], regval[1])
@@ -44,51 +107,10 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
     begin_state.memory.store(struct_addr, symbolic_struct)
 
     # Run simulation manager
-    simgr: angr.sim_manager.SimulationManager = project.factory.simgr(begin_state)
+    simgr: angr.SimulationManager = project.factory.simgr(begin_state)
     simgr.run(until=lambda sm: sm.active[0].addr == ret_addr)
 
     # Examine history events
-    end_state: angr.sim_state.SimState = simgr.active[0]
+    end_state: angr.SimState = simgr.active[0]
 
-    # Carry out the information step by step
-    primitives: list[Primitive] = []
-    solver = claripy.Solver()
-    for h in end_state.history.lineage:
-        h: angr.state_plugins.SimStateHistory
-        solver.add([c.ast for c in h.recent_constraints])
-        solver.simplify()
-
-        tainted_events = [
-            e
-            for e in h.recent_actions
-            if isinstance(e, angr.state_plugins.SimActionData) and e.is_symbolic
-        ]
-        tainted_jump = (
-            h.jump_target if h.jump_target != None and h.jump_target.symbolic else None
-        )
-
-        # Extract primitives
-        for e in tainted_events:
-            # TODO: More detailed analysis on this, identify base+shift
-            ast: claripy.ast.BV = e.addr.ast
-            addr_range = (solver.min(ast), solver.max(ast))
-            if addr_range[0] == addr_range[1]:
-                continue
-            poc_vector = solver.eval(ast, 1)[0]
-            primitive = Primitive(
-                e.action, solver.constraints, addr_range, ast, poc_vector
-            )
-
-            primitives.append(primitive)
-
-        if tainted_jump != None:
-            addr_range = (solver.min(tainted_jump), solver.max(tainted_jump))
-            poc_vector = solver.eval(tainted_jump, 1)[0]
-            primitive = Primitive(
-                "exec", solver.constraints, addr_range, tainted_jump, poc_vector
-            )
-
-            primitives.append(primitive)
-
-    print(primitives)
-    return primitives
+    return analyze_history(project, end_state)
