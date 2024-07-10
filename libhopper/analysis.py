@@ -17,14 +17,17 @@ def tainted_ast_to_primitive(
             base = c.concrete_value
             break
 
-    if base != 0:
-        action = f"relative-{action}"
-
     addr_range = (solver.min(ast) - base, solver.max(ast) - base)
     poc_vector = solver.eval(ast, 1)[0]
-    primitive = Primitive(
-        action, solver.constraints, (base, addr_range), ast, poc_vector
-    )
+
+    if base != 0:
+        primitive = Primitive(
+            f"rela-{action}", solver.constraints, (base, addr_range), ast, poc_vector
+        )
+    else:
+        primitive = Primitive(
+            f"arbi-{action}", solver.constraints, (addr_range), ast, poc_vector
+        )
 
     return primitive
 

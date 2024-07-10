@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # gen_core_dump()
 
     # Analyze core dump
-    analysis(analysis_config, 5)
+    analysis(analysis_config, 6)
     # for i in range(10, len(parse_all(analysis_config))):
     #     print(f"Analysis {i}")
     #     analysis(analysis_config, i)
