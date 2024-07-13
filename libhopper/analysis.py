@@ -4,11 +4,12 @@ import cle
 from itertools import chain
 from .parse_config import parse_all
 from .primitive import Primitive
+from .api_tracker import reg_api_tracker_hooks
 
 
 def tainted_ast_to_primitive(
     ast: claripy.ast.BV, mem_range: chain[int], solver: claripy.Solver, action: str
-) -> Primitive:
+) -> Primitive | None:
 
     # Extract possiable base
     base = 0
@@ -18,6 +19,9 @@ def tainted_ast_to_primitive(
             break
 
     addr_range = (solver.min(ast) - base, solver.max(ast) - base)
+    if addr_range[0] == addr_range[1]:
+        return None
+
     poc_vector = solver.eval(ast, 1)[0]
 
     if base != 0:
@@ -69,6 +73,8 @@ def analyze_history(project: angr.Project, end_state: angr.SimState) -> list[Pri
                 tainted_ast_to_primitive(tainted_jump, mem_range, solver, "exec")
             )
 
+    # Drop None in primitives
+    primitives = [p for p in primitives if p is not None]
     print(primitives)
     return primitives
 
@@ -109,11 +115,16 @@ def analysis(analysis_config_file: str, index: int) -> list[Primitive]:
     begin_state.solver.add(concrete_struct == symbolic_struct)
     begin_state.memory.store(struct_addr, symbolic_struct)
 
+    # Register API hooks
+    reg_api_tracker_hooks(project, begin_state)
+
     # Run simulation manager
     simgr: angr.SimulationManager = project.factory.simgr(begin_state)
     simgr.run(until=lambda sm: sm.active[0].addr == ret_addr)
 
-    # Examine history events
+    # Examine primitives
     end_state: angr.SimState = simgr.active[0]
+    history_primitives: list[Primitive] = analyze_history(project, end_state)
+    api_primitives: list[Primitive] = end_state.api_tracker.api_primitives
 
-    return analyze_history(project, end_state)
+    return history_primitives + api_primitives
