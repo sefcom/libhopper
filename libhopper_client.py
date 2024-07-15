@@ -21,15 +21,16 @@ def gen_core_dump():
 
     command = ["gdb", "-ex", "source ./libhopper/gen_core.py", "-ex", "quit", test_name]
     subprocess.run(command, env=curr_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # subprocess.run(command, env=curr_env)
 
 if __name__ == "__main__":
     config = parse_config(gen_core_config)
     core_dump_dir = config["core_dump_dir"]
     analysis_config = core_dump_dir + analysis_config
-    # gen_core_dump()
+    gen_core_dump()
 
     # Analyze core dump
-    analysis(analysis_config, 6)
+    # analysis(analysis_config, 3)
     # for i in range(10, len(parse_all(analysis_config))):
     #     print(f"Analysis {i}")
     #     analysis(analysis_config, i)

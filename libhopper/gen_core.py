@@ -71,11 +71,14 @@ def main(gen_core_config_file, analysis_config_file):
         except:
             break
 
+        func_name = frame.function().name
+        gdb.execute(f"clear {func_name}")
+
         struct_addr = parse_args(struct_type)
         if struct_addr == None:
+            gdb.execute("continue")
             continue
 
-        func_name = frame.function().name
         ret_addr = frame.older().pc()
         core_file = f"{core_dump_dir}{func_name}.dump"
         gdb.execute(f"generate-core-file {core_file}")
@@ -88,7 +91,6 @@ def main(gen_core_config_file, analysis_config_file):
             f.write(f"struct_size: {hex(struct_size)}\n")
             f.write(f"ret_addr: {hex(ret_addr)}\n")
 
-        gdb.execute(f"clear {func_name}")
         gdb.execute("continue")
 
 
