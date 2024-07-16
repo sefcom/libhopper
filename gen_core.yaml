@@ -3,24 +3,24 @@
 ################################################################################
 # For libdummy.so
 ################################################################################
-# The path to the GDB core dump file
-core_dump_dir: "/tmp/libdummy_dump/"
-# The struct type
-struct_type: lib_state
-# The regex to match the function names in the library
-brkp_regex: ["^libapi_"]
-# The test program to run to generate the core dump
-test_name: "./tests/libdummy/test"
-# The test program environment variables
-test_env: {"LD_BIND_NOW": "1", "LD_LIBRARY_PATH": "./tests/libdummy/"}
-# The arguments to pass to the library self-test program
-test_argv: ""
+# # The path to the GDB core dump file
+# core_dump_dir: "/tmp/libdummy_dump/"
+# # The struct type
+# struct_type: "lib_state"
+# # The regex to match the function names in the library
+# brkp_regex: ["^libapi_"]
+# # The test program to run to generate the core dump
+# test_name: "./tests/libdummy/test"
+# # The test program environment variables
+# test_env: {"LD_BIND_NOW": "1", "LD_LIBRARY_PATH": "./tests/libdummy/"}
+# # The arguments to pass to the library self-test program
+# test_argv: ""
 
 ################################################################################
 # For libz
 ################################################################################
 # core_dump_dir: "/tmp/libz_dump/"
-# struct_names: ["strm"]
+# struct_type: "z_stream"
 # brkp_regex: ["^deflate", "^inflate", "^gz", "^compress", "^uncompress"]
 # test_name: "./tests/libz/test"
 # test_env: {"LD_BIND_NOW": "1", "LD_LIBRARY_PATH": "./tests/libz/"}
@@ -29,6 +29,9 @@ test_argv: ""
 ################################################################################
 # For libpng
 ################################################################################
-# struct_names: ["png_ptr", "info_ptr"]
-# brkp_regex: ["^png_"]
-# test_argv: ""
+core_dump_dir: "/tmp/libpng_dump/"
+struct_type: "png_struct"
+brkp_regex: ["^png_"]
+test_name: "./tests/libpng/test"
+test_env: {"LD_BIND_NOW": "1", "LD_LIBRARY_PATH": "./tests/libpng/"}
+test_argv: ""
