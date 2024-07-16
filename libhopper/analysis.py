@@ -38,6 +38,8 @@ def tainted_ast_to_primitive(
 
 def analyze_history(project: angr.Project, end_state: angr.SimState) -> list[Primitive]:
     primitives: list[Primitive] = []
+    # TODO: Should use the solver from the state, recent constraints not enough
+    # Probably make the analysis step by step during execution
     solver = claripy.Solver()
     mem_range = chain.from_iterable(
         (

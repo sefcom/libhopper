@@ -4,35 +4,57 @@ from .primitive import Primitive
 
 
 def reg_api_tracker_hooks(project: Project, begin_state: SimState):
-    # Posix C library function hooks (only for those that can produce API primitives)
-    project.hook_symbol("open", openHook())
-    project.hook_symbol("read", readHook())
-    project.hook_symbol("write", writeHook())
+    lib_obj = project.loader.all_elf_objects[-2] # lib object is the second last
 
-    # SIM_PROCEDURES["posix"]["open"] = openHook
-    # SIM_PROCEDURES["posix"]["read"] = readHook
-    # SIM_PROCEDURES["posix"]["write"] = writeHook
+    # Posix C library function hooks (only for those that can produce API primitives)
+    open_plt_addr = lib_obj.plt.get("open")
+    if open_plt_addr is not None:
+        project.hook(open_plt_addr, openHook())
+
+    read_plt_addr = lib_obj.plt.get("read")
+    if read_plt_addr is not None:
+        project.hook(read_plt_addr, readHook())
+
+    write_plt_addr = lib_obj.plt.get("write")
+    if write_plt_addr is not None:
+        project.hook(write_plt_addr, writeHook())
 
     # Standard C library function hooks (only for those that can produce API primitives)
-    project.hook_symbol("fopen", fopenHook())
-    project.hook_symbol("fread", freadHook())
-    project.hook_symbol("fwrite", fwriteHook())
-    project.hook_symbol("fgets", fgetsHook())
-    project.hook_symbol("fputs", fputsHook())
-    project.hook_symbol("memcpy", memcpyHook())
-    project.hook_symbol("strcpy", strcpyHook())
-    project.hook_symbol("strncpy", strncpyHook())
-    project.hook_symbol("free", freeHook())
+    fopen_plt_addr = lib_obj.plt.get("fopen")
+    if fopen_plt_addr is not None:
+        project.hook(fopen_plt_addr, fopenHook())
 
-    # SIM_PROCEDURES["libc"]["fopen"] = fopenHook
-    # SIM_PROCEDURES["libc"]["fread"] = freadHook
-    # SIM_PROCEDURES["libc"]["fwrite"] = fwriteHook
-    # SIM_PROCEDURES["libc"]["fgets"] = fgetsHook
-    # SIM_PROCEDURES["libc"]["fputs"] = fputsHook
-    # SIM_PROCEDURES["libc"]["memcpy"] = memcpyHook
-    # SIM_PROCEDURES["libc"]["strcpy"] = strcpyHook
-    # SIM_PROCEDURES["libc"]["strncpy"] = strncpyHook
-    # SIM_PROCEDURES["libc"]["free"] = freeHook
+    fread_plt_addr = lib_obj.plt.get("fread")
+    if fread_plt_addr is not None:
+        project.hook(fread_plt_addr, freadHook())
+
+    fwrite_plt_addr = lib_obj.plt.get("fwrite")
+    if fwrite_plt_addr is not None:
+        project.hook(fwrite_plt_addr, fwriteHook())
+
+    fgets_plt_addr = lib_obj.plt.get("fgets")
+    if fgets_plt_addr is not None:
+        project.hook(fgets_plt_addr, fgetsHook())
+
+    fputs_plt_addr = lib_obj.plt.get("fputs")
+    if fputs_plt_addr is not None:
+        project.hook(fputs_plt_addr, fputsHook())
+
+    memcpy_plt_addr = lib_obj.plt.get("memcpy")
+    if memcpy_plt_addr is not None:
+        project.hook(memcpy_plt_addr, memcpyHook())
+
+    strcpy_plt_addr = lib_obj.plt.get("strcpy")
+    if strcpy_plt_addr is not None:
+        project.hook(strcpy_plt_addr, strcpyHook())
+
+    strncpy_plt_addr = lib_obj.plt.get("strncpy")
+    if strncpy_plt_addr is not None:
+        project.hook(strncpy_plt_addr, strncpyHook())
+
+    free_plt_addr = lib_obj.plt.get("free")
+    if free_plt_addr is not None:
+        project.hook(free_plt_addr, freeHook())
 
     # Register the APITracker plugin
     begin_state.register_plugin("api_tracker", APITracker())
